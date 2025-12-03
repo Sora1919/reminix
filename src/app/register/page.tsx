@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { User, Mail, Lock } from "lucide-react";
+import {toast} from "sonner";
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -19,18 +19,42 @@ export default function RegisterPage() {
         password: "",
     });
 
-    async function handleRegister(e: any) {
-        e.preventDefault();
+    async function handleRegister(values: any) {
+        try {
+            const res = await fetch("/api/register", {
+                method: "POST",
+                body: JSON.stringify(values),
+            });
 
-        const res = await fetch("/api/register", {
-            method: "POST",
-            body: JSON.stringify(form),
-        });
+            const data = await res.json();
 
-        const data = await res.json();
+            if (!res.ok) {
+                toast("Registration failed",{
+                    description: data.error || "Something went wrong",
+                    action: {
+                        label: "Undo",
+                        onClick: () => console.log("Undo"),
+                    },
+                });
+                return;
+            }
 
-        if (res.ok) router.push("/login");
-        else alert(data.error);
+            toast("Account created!",{
+                description: "You can now log in.",
+            });
+
+            //Redirect to login
+            router.push("/login");
+
+        } catch (err) {
+            toast("Error",{
+                description: "Unexpected error occurred.",
+                action: {
+                    label: "Undo",
+                    onClick: () => console.log("Undo"),
+                },
+            });
+        }
     }
 
     return (

@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { Mail, Lock } from "lucide-react";
+import {toast} from "sonner";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -19,17 +20,40 @@ export default function LoginPage() {
         password: "",
     });
 
-    async function handleLogin(e: any) {
-        e.preventDefault();
+    async function handleLogin(values: any) {
+        try {
+            const res = await signIn("credentials", {
+                redirect: false,
+                email: values.email,
+                password: values.password,
+            });
 
-        const res = await signIn("credentials", {
-            email: form.email,
-            password: form.password,
-            redirect: false,
-        });
+            if (res?.error) {
+                toast("Login failed",{
+                    description: "Invalid email or password.",
+                    action: {
+                        label: "Undo",
+                        onClick: () => console.log("Undo"),
+                    },
+                });
+                return;
+            }
 
-        if (res?.ok) router.push("/dashboard");
-        else alert("Invalid email or password");
+            toast("Login successful",{
+                description: "Redirecting...",
+            });
+
+            router.push("/dashboard");
+
+        } catch (err) {
+            toast("Error",{
+                description: "Unexpected error occurred.",
+                action: {
+                    label: "Undo",
+                    onClick: () => console.log("Undo"),
+                },
+            });
+        }
     }
 
     return (
