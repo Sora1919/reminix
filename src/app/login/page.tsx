@@ -31,10 +31,6 @@ export default function LoginPage() {
             if (res?.error) {
                 toast("Login failed",{
                     description: "Invalid email or password.",
-                    action: {
-                        label: "Undo",
-                        onClick: () => console.log("Undo"),
-                    },
                 });
                 return;
             }
@@ -48,10 +44,6 @@ export default function LoginPage() {
         } catch (err) {
             toast("Error",{
                 description: "Unexpected error occurred.",
-                action: {
-                    label: "Undo",
-                    onClick: () => console.log("Undo"),
-                },
             });
         }
     }
@@ -75,7 +67,13 @@ export default function LoginPage() {
                     </CardHeader>
 
                     <CardContent>
-                        <form onSubmit={handleLogin} className="space-y-4">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleLogin(form);
+                            }}
+                            className="space-y-4"
+                        >
 
                             {/* Email */}
                             <div>
@@ -119,8 +117,8 @@ export default function LoginPage() {
                                     className="text-blue-600 cursor-pointer underline"
                                     onClick={() => router.push("/register")}
                                 >
-                  Register
-                </span>
+                                  Register
+                                </span>
                             </p>
                         </form>
                     </CardContent>

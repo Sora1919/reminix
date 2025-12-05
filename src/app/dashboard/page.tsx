@@ -1,16 +1,18 @@
-// import { auth } from "@/app/api/auth"; // next-auth helper for server
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
-    // const session = await auth();
-    //
-    // if (!session) {
-    //     redirect("/login");
-    // }
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+        redirect("/login");
+    }
 
     return (
-        <div>
-            Protected Dashboard Content
+        <div className="p-6">
+            <h1 className="text-3xl font-bold">Welcome {session.user?.name}</h1>
+            <p className="text-gray-600 mt-2">Start by creating your first event.</p>
         </div>
     );
 }

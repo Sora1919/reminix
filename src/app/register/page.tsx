@@ -21,7 +21,7 @@ export default function RegisterPage() {
 
     async function handleRegister(values: any) {
         try {
-            const res = await fetch("/api/register", {
+            const res = await fetch("/api/auth/register", {
                 method: "POST",
                 body: JSON.stringify(values),
             });
