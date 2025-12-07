@@ -14,14 +14,16 @@ datasource db {
 }
 
 model User {
-  id        Int       @id @default(autoincrement())
-  name      String?
-  email     String    @unique
-  password  String?
-  image     String?
-  accounts  Account[]
-  sessions  Session[]
-  createdAt DateTime  @default(now())
+  id            Int            @id @default(autoincrement())
+  name          String?
+  email         String         @unique
+  password      String?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  events        Event[]
+  collaborators Collaborator[]
+  createdAt     DateTime       @default(now())
 }
 
 model Account {
@@ -60,4 +62,77 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  location    String?
+  priority    Priority @default(MEDIUM)
+
+  categoryId Int?
+  category   Category? @relation(fields: [categoryId], references: [id])
+
+  notifyBefore Int? // Minutes before event to notify
+  recurrenceId Int?        @unique
+  recurrence   Recurrence? @relation(fields: [recurrenceId], references: [id])
+
+  creatorId Int
+  creator   User @relation(fields: [creatorId], references: [id])
+
+  collaborators Collaborator[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Recurrence {
+  id         Int       @id @default(autoincrement())
+  frequency  Frequency
+  interval   Int       @default(1)
+  byWeekdays Json?
+  count      Int?
+  until      DateTime?
+  event      Event?
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model Category {
+  id     Int     @id @default(autoincrement())
+  name   String
+  events Event[]
+}
+
+model Collaborator {
+  id      Int    @id @default(autoincrement())
+  eventId Int
+  userId  Int
+  role    String @default("editor")
+
+  event Event @relation(fields: [eventId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  // user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

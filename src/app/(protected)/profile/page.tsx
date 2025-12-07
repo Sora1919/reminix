@@ -23,7 +23,7 @@ export default function ProfilePage() {
 
     return (
         <div className="p-6">
-            {/*<h1 className="text-xl font-bold">Hello {session.user?.name}</h1>*/}
+            <h1 className="text-xl font-bold">Hello {session.user?.name}</h1>
         </div>
     );
 }

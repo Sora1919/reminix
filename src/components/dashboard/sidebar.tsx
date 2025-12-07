@@ -17,12 +17,12 @@ export default function Sidebar() {
                     <Home size={18} /> Overview
                 </Link>
 
-                <Link href="/dashboard/events" className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded">
+                <Link href="/events" className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded">
                     <Calendar size={18} /> Events
                 </Link>
 
-                <Link href="/dashboard/collaboration" className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded">
-                    <Users size={18} /> Collaboration
+                <Link href="/profile" className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded">
+                    <Calendar size={18} /> Profiles
                 </Link>
 
                 <button

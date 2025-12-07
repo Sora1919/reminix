@@ -23,6 +23,9 @@ export default function RegisterPage() {
         try {
             const res = await fetch("/api/auth/register", {
                 method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
                 body: JSON.stringify(values),
             });
 
@@ -31,10 +34,6 @@ export default function RegisterPage() {
             if (!res.ok) {
                 toast("Registration failed",{
                     description: data.error || "Something went wrong",
-                    action: {
-                        label: "Undo",
-                        onClick: () => console.log("Undo"),
-                    },
                 });
                 return;
             }
@@ -49,10 +48,6 @@ export default function RegisterPage() {
         } catch (err) {
             toast("Error",{
                 description: "Unexpected error occurred.",
-                action: {
-                    label: "Undo",
-                    onClick: () => console.log("Undo"),
-                },
             });
         }
     }
@@ -76,9 +71,16 @@ export default function RegisterPage() {
                     </CardHeader>
 
                     <CardContent>
-                        <form onSubmit={handleRegister} className="space-y-4">
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleRegister(form);
+                            }}
+                            className="space-y-4"
+                        >
 
-                            {/* Name */}
+
+                        {/* Name */}
                             <div>
                                 <Label>Name</Label>
                                 <div className="relative">

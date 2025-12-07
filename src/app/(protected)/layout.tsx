@@ -9,7 +9,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
             <div className="flex flex-col flex-1">
                 <Navbar />
-                <main className="p-6">{children}</main>
+                <main className="p-6">
+                    {children}
+                </main>
             </div>
         </div>
     );
