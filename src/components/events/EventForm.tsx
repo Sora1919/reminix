@@ -16,10 +16,14 @@ import { Label } from "@/components/ui/label";
 import {CalendarIcon, Loader2} from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import {toast} from "sonner";
 
 export default function CreateEventPage() {
     const [startDate, setStartDate] = useState<Date | undefined>(new Date());
     const [endDate, setEndDate] = useState<Date | undefined>(addDays(new Date(), 1));
+    const [startTime, setStartTime] = useState("12:00");
+    const [endTime, setEndTime] = useState("12:00");
+
 
     const [categoryId, setCategoryId] = useState<number | null>(null);
     const [priority, setPriority] = useState("MEDIUM");
@@ -45,15 +49,32 @@ export default function CreateEventPage() {
         return null;
     }
 
+    function combineDateTime(date: Date | undefined, time: string) {
+        if (!date || !time) return null;
+
+        const [hours, minutes] = time.split(":").map(Number);
+
+        const combined = new Date(date);
+        combined.setHours(hours);
+        combined.setMinutes(minutes);
+        combined.setSeconds(0);
+
+        return combined;
+    }
+
+
     async function handleSubmit(e: any) {
         e.preventDefault();
+
+        const finalStart = combineDateTime(startDate, startTime);
+        const finalEnd = combineDateTime(endDate, endTime);
 
         const data = {
             title: e.target.title.value,
             description: e.target.description.value,
             location: e.target.location.value,
-            startDate,
-            endDate,
+            startDate: finalStart,
+            endDate : endDate,
             priority,
             categoryId,
             notifyBefore,
@@ -77,8 +98,14 @@ export default function CreateEventPage() {
         });
 
 
-        if (res.ok) alert("Event created successfully!");
-        else alert("Error creating event");
+
+
+        if (res.ok) toast("Event created successfully.", {
+            description: "Event created",
+        });
+        else toast("Event created failed", {
+            description: "Error creating event",
+        })
     }
 
     return (
@@ -151,6 +178,30 @@ export default function CreateEventPage() {
                                         </PopoverContent>
                                     </Popover>
                                 </div>
+
+                                {/* TIME PICKERS */}
+                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                    <div>
+                                        <Label>Start Time</Label>
+                                        <Input
+                                            type="time"
+                                            value={startTime}
+                                            onChange={(e) => setStartTime(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+
+                                    <div>
+                                        <Label>End Time</Label>
+                                        <Input
+                                            type="time"
+                                            value={endTime}
+                                            onChange={(e) => setEndTime(e.target.value)}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
                             </div>
 
                             {/* Submit */}
