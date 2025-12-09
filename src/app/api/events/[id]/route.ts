@@ -1,16 +1,23 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function GET(_: Request, { params }: any) {
+// --------------------- GET ---------------------
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
+    const { id } = await context.params;
+
     try {
         const event = await prisma.event.findUnique({
-            where: { id: Number(params.id) },
+            where: { id: Number(id) },
             include: {
                 recurrence: true,
                 category: true,
                 collaborators: { include: { user: true } }
             }
         });
+
+        if (!event) {
+            return NextResponse.json({ error: "Event not found" }, { status: 404 });
+        }
 
         return NextResponse.json(event);
     } catch (e) {
@@ -19,9 +26,11 @@ export async function GET(_: Request, { params }: any) {
     }
 }
 
-export async function PUT(req: Request, { params }: any) {
+// --------------------- PUT ---------------------
+export async function PUT(req: Request, context: { params: Promise<{ id: string }> }) {
+    const { id } = await context.params; // ADD 'await' HERE
+
     try {
-        const id = Number(params.id);
         const data = await req.json();
 
         const {
@@ -38,10 +47,10 @@ export async function PUT(req: Request, { params }: any) {
 
         let recurrenceIdToUse = undefined;
 
+        // Handle recurrence updating or creation
         if (recurrence) {
-            // If event has existing recurrence, update it.
             const existing = await prisma.event.findUnique({
-                where: { id },
+                where: { id: Number(id) },
                 select: { recurrenceId: true }
             });
 
@@ -76,7 +85,7 @@ export async function PUT(req: Request, { params }: any) {
         }
 
         const updated = await prisma.event.update({
-            where: { id },
+            where: { id: Number(id) },
             data: {
                 title,
                 description,
@@ -98,12 +107,13 @@ export async function PUT(req: Request, { params }: any) {
     }
 }
 
-export async function DELETE(_: Request, { params }: any) {
-    try {
-        const id = Number(params.id);
+// --------------------- DELETE ---------------------
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
+    const { id } = await context.params; // ADD 'await' HERE
 
+    try {
         const event = await prisma.event.delete({
-            where: { id }
+            where: { id: Number(id) }
         });
 
         return NextResponse.json({ success: true, deleted: event });

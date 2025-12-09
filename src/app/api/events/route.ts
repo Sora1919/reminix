@@ -24,8 +24,6 @@ export async function GET() {
 export async function POST(req: Request) {
     try {
         const data = await req.json();
-        console.log("📥 Incoming Event Data:", data);
-
 
         const {
             title,
@@ -49,7 +47,6 @@ export async function POST(req: Request) {
         let recurrenceRecord = null;
 
         if (recurrence) {
-            console.log("📌 Recurrence Received:", recurrence);
             recurrenceRecord = await prisma.recurrence.create({
                 data: {
                     frequency: recurrence.frequency,
@@ -64,9 +61,6 @@ export async function POST(req: Request) {
         if (!title || !startDate || !endDate || !creatorId) {
             throw new Error("Missing required fields");
         }
-
-
-        console.log("📌 Creating event now...");
         const event = await prisma.event.create({
             data: {
                 title,
@@ -85,12 +79,9 @@ export async function POST(req: Request) {
                 category: true,
             }
         });
-
-        console.log("✅ Event created:", event);
         return NextResponse.json(event);
 
     } catch (e) {
-        console.error("POST /events error", e);
         return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
     }
 }
