@@ -19,6 +19,8 @@ export async function GET() {
         console.error("GET /events error", e);
         return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
     }
+
+    
 }
 
 export async function POST(req: Request) {
@@ -85,3 +87,5 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "Failed to create event" }, { status: 500 });
     }
 }
+
+

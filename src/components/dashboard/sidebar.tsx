@@ -21,6 +21,10 @@ export default function Sidebar() {
                     <Calendar size={18} /> Events
                 </Link>
 
+                <Link href="/calendar" className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded">
+                    <Calendar size={18} /> Calendar
+                </Link>
+
                 <Link href="/profile" className="flex items-center gap-3 p-2 hover:bg-gray-100 rounded">
                     <Calendar size={18} /> Profiles
                 </Link>
