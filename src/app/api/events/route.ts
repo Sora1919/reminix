@@ -1,17 +1,37 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { toast } from "sonner";
 
-export async function GET() {
+export async function GET(req: Request) {
     try {
+        const { searchParams } = new URL(req.url);
+        const month = Number(searchParams.get("month"));
+        const year = Number(searchParams.get("year"));
+        const start = searchParams.get("start"); // ISO string
+        const end = searchParams.get("end");     // ISO string
+
+        const whereClause: any = {};
+
+        if (start && end) {
+            whereClause.startDate = {
+                gte: new Date(start),
+                lt: new Date(end),
+            };
+        } else if (month && year) {
+            whereClause.startDate = {
+                gte: new Date(year, month - 1, 1),
+                lt: new Date(year, month, 1),
+            };
+        }
+
         const events = await prisma.event.findMany({
+            where: whereClause,
             include: {
                 category: true,
                 recurrence: true,
-                collaborators: {
-                    include: { user: true }
-                },
-                creator: true
-            }
+                collaborators: { include: { user: true } },
+                creator: true,
+            },
         });
 
         return NextResponse.json(events);
@@ -19,8 +39,6 @@ export async function GET() {
         console.error("GET /events error", e);
         return NextResponse.json({ error: "Failed to fetch events" }, { status: 500 });
     }
-
-    
 }
 
 export async function POST(req: Request) {
@@ -43,7 +61,7 @@ export async function POST(req: Request) {
         const creatorIdNumber = Number(creatorId);
 
         if (!creatorIdNumber) {
-            throw new Error("Invalid creatorId");
+            toast.error("Invalid creator id");
         }
 
         let recurrenceRecord = null;
@@ -61,7 +79,7 @@ export async function POST(req: Request) {
         }
 
         if (!title || !startDate || !endDate || !creatorId) {
-            throw new Error("Missing required fields");
+            toast.error("Missing required fields");
         }
         const event = await prisma.event.create({
             data: {

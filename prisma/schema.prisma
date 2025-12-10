@@ -112,9 +112,11 @@ enum Priority {
 }
 
 model Category {
-  id     Int     @id @default(autoincrement())
-  name   String
-  events Event[]
+  id        Int      @id @default(autoincrement())
+  name      String
+  color     String   @default("#4CAF50")
+  events    Event[]
+  createdAt DateTime @default(now())
 }
 
 model Collaborator {

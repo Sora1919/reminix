@@ -14,39 +14,38 @@ import {toast} from "sonner";
 
 export default function LoginPage() {
     const router = useRouter();
-
+    const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({
         email: "",
         password: "",
     });
+    const [error, setError] = useState("");
 
-    async function handleLogin(values: any) {
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError("");
+
         try {
-            const res = await signIn("credentials", {
+            const result = await signIn("credentials", {
+                email: form.email,
+                password: form.password,
                 redirect: false,
-                email: values.email,
-                password: values.password,
             });
 
-            if (res?.error) {
-                toast("Login failed",{
-                    description: "Invalid email or password.",
-                });
-                return;
+            if (result?.error) {
+                toast.error("Invalid email or password");
+            } else {
+                toast.success("Login successful");
+                router.push("/dashboard");
+                router.refresh();
             }
-
-            toast("Login successful",{
-                description: "Redirecting...",
-            });
-
-            router.push("/dashboard");
-
         } catch (err) {
-            toast("Error",{
-                description: "Unexpected error occurred.",
-            });
+            toast.error("Something went wrong");
+        } finally {
+            setLoading(false);
         }
-    }
+    };
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
@@ -67,13 +66,7 @@ export default function LoginPage() {
                     </CardHeader>
 
                     <CardContent>
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                handleLogin(form);
-                            }}
-                            className="space-y-4"
-                        >
+                        <form onSubmit={handleSubmit} className="space-y-4">
 
                             {/* Email */}
                             <div>
@@ -84,6 +77,7 @@ export default function LoginPage() {
                                         type="email"
                                         placeholder="name@example.com"
                                         className="pl-8"
+                                        value={form.email}
                                         onChange={(e) =>
                                             setForm({ ...form, email: e.target.value })
                                         }
@@ -100,6 +94,7 @@ export default function LoginPage() {
                                         type="password"
                                         placeholder="••••••••"
                                         className="pl-8"
+                                        value={form.password}
                                         onChange={(e) =>
                                             setForm({ ...form, password: e.target.value })
                                         }
@@ -107,8 +102,10 @@ export default function LoginPage() {
                                 </div>
                             </div>
 
-                            <Button type="submit" className="w-full">
-                                Login
+                            {error && <p className="text-red-500">{error}</p>}
+
+                            <Button type="submit" disabled={loading} className="w-full">
+                                {loading ? "Signing in..." : "Sign In"}
                             </Button>
 
                             <p className="text-center text-sm mt-2">

@@ -12,45 +12,63 @@ import {toast} from "sonner";
 
 export default function RegisterPage() {
     const router = useRouter();
-
+    const [loading, setLoading] = useState(false);
     const [form, setForm] = useState({
         name: "",
         email: "",
         password: "",
+        confirmPassword: "",
     });
 
-    async function handleRegister(values: any) {
+    const [error, setError] = useState("");
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        if (form.password !== form.confirmPassword) {
+            toast.error("Passwords don't match");
+            return;
+        }
+
+        setLoading(true);
+        setError("");
+
         try {
             const res = await fetch("/api/auth/register", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(values),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: form.name,
+                    email: form.email,
+                    password: form.password,
+                }),
             });
-
-            const data = await res.json();
 
             if (!res.ok) {
-                toast("Registration failed",{
-                    description: data.error || "Something went wrong",
+                toast.error("Registration failed.");
+            } else {
+                // Auto-login after registration
+                const signInRes = await fetch("/api/auth/callback/credentials", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        email: form.email,
+                        password: form.password,
+                    }),
                 });
-                return;
+
+                if (signInRes.ok) {
+                    toast.success("Registration successful");
+                    router.push("/dashboard");
+                    router.refresh();
+                }
             }
-
-            toast("Account created!",{
-                description: "You can now log in.",
-            });
-
-            //Redirect to login
-            router.push("/login");
-
-        } catch (err) {
-            toast("Error",{
-                description: "Unexpected error occurred.",
-            });
+        } catch (error) {
+            toast.error("Something went wrong");
+        } finally {
+            setLoading(false);
         }
-    }
+    };
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
@@ -71,15 +89,7 @@ export default function RegisterPage() {
                     </CardHeader>
 
                     <CardContent>
-                        <form
-                            onSubmit={(e) => {
-                                e.preventDefault();
-                                handleRegister(form);
-                            }}
-                            className="space-y-4"
-                        >
-
-
+                        <form onSubmit={handleSubmit} className="space-y-4">
                         {/* Name */}
                             <div>
                                 <Label>Name</Label>
@@ -89,9 +99,11 @@ export default function RegisterPage() {
                                         type="text"
                                         placeholder="Your Name"
                                         className="pl-8"
+                                        value={form.name}
                                         onChange={(e) =>
                                             setForm({ ...form, name: e.target.value })
                                         }
+                                        required
                                     />
                                 </div>
                             </div>
@@ -105,9 +117,11 @@ export default function RegisterPage() {
                                         type="email"
                                         placeholder="name@example.com"
                                         className="pl-8"
+                                        value={form.email}
                                         onChange={(e) =>
                                             setForm({ ...form, email: e.target.value })
                                         }
+                                        required
                                     />
                                 </div>
                             </div>
@@ -121,15 +135,37 @@ export default function RegisterPage() {
                                         type="password"
                                         placeholder="••••••••"
                                         className="pl-8"
+                                        value={form.password}
                                         onChange={(e) =>
                                             setForm({ ...form, password: e.target.value })
                                         }
+                                        required
                                     />
                                 </div>
                             </div>
 
-                            <Button type="submit" className="w-full">
-                                Create Account
+                                {/* Confirm Password */}
+                                <div>
+                                    <Label>Confirm Password</Label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-2 top-3 h-4 w-4 text-gray-500" />
+                                        <Input
+                                            type="password"
+                                            placeholder="••••••••"
+                                            className="pl-8"
+                                            value={form.confirmPassword}
+                                            onChange={(e) =>
+                                                setForm({ ...form, confirmPassword: e.target.value })
+                                            }
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                            {error && <p className="text-red-500">{error}</p>}
+
+                            <Button type="submit" disabled={loading} className="w-full">
+                                {loading ? "Creating account..." : "Register"}
                             </Button>
 
                             <p className="text-center text-sm mt-2">
