@@ -5,12 +5,34 @@ import { toast } from "sonner";
 export async function GET(req: Request) {
     try {
         const { searchParams } = new URL(req.url);
+        const categoryId = searchParams.get("categoryId");
+        const priority = searchParams.get("priority");
         const month = Number(searchParams.get("month"));
         const year = Number(searchParams.get("year"));
         const start = searchParams.get("start"); // ISO string
         const end = searchParams.get("end");     // ISO string
+        const search = searchParams.get("search");
 
         const whereClause: any = {};
+
+
+
+        if (search) {
+            whereClause.OR = [
+                { title: { contains: search, mode: "insensitive" } },
+                { description: { contains: search, mode: "insensitive" } }
+            ];
+        }
+
+        // CATEGORY FILTER
+        if (categoryId) {
+            whereClause.categoryId = Number(categoryId);
+        }
+
+        // PRIORITY FILTER
+        if (priority) {
+            whereClause.priority = priority.toUpperCase();  // e.g. "low", "medium", "high"
+        }
 
         if (start && end) {
             whereClause.startDate = {

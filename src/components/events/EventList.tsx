@@ -6,6 +6,7 @@ import EventCard from "./EventCard";
 export default function EventList() {
     const [events, setEvents] = useState([]);
 
+
     useEffect(() => {
         fetch("/api/events")
             .then(res => res.json())
