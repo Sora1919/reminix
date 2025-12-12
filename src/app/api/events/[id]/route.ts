@@ -11,7 +11,18 @@ export async function GET(request: Request, context: { params: Promise<{ id: str
             include: {
                 recurrence: true,
                 category: true,
-                collaborators: { include: { user: true } }
+                collaborators: {
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                image: true
+                            }
+                        }
+                    }
+                },
             }
         });
 

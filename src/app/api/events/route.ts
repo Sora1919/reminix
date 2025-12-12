@@ -51,7 +51,18 @@ export async function GET(req: Request) {
             include: {
                 category: true,
                 recurrence: true,
-                collaborators: { include: { user: true } },
+                collaborators: {  // ← ADD THIS!
+                    include: {
+                        user: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                image: true
+                            }
+                        }
+                    }
+                },
                 creator: true,
             },
         });
