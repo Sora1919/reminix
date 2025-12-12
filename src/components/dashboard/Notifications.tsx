@@ -1,4 +1,4 @@
-// src/components/dashboard/Notifications.tsx
+// src/components/dashboard/notifications.tsx
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";

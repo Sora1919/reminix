@@ -2,6 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 export default function Navbar() {
     const { data: session } = useSession();
@@ -21,6 +22,7 @@ export default function Navbar() {
                 <Avatar>
                     <AvatarFallback>{initials}</AvatarFallback>
                 </Avatar>
+                <NotificationBell />
             </div>
         </header>
     );

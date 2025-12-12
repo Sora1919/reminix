@@ -23,6 +23,7 @@ model User {
   sessions      Session[]
   events        Event[]
   collaborators Collaborator[]
+  notifications Notification[]
   createdAt     DateTime       @default(now())
 }
 
@@ -74,16 +75,17 @@ model Event {
   priority    Priority @default(MEDIUM)
 
   categoryId Int?
-  category   Category? @relation(fields: [categoryId], references: [id])
+  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   notifyBefore Int? // Minutes before event to notify
   recurrenceId Int?        @unique
-  recurrence   Recurrence? @relation(fields: [recurrenceId], references: [id])
+  recurrence   Recurrence? @relation(fields: [recurrenceId], references: [id], onDelete: Cascade)
 
   creatorId Int
-  creator   User @relation(fields: [creatorId], references: [id])
+  creator   User @relation(fields: [creatorId], references: [id], onDelete: Cascade)
 
   collaborators Collaborator[]
+  notifications Notification[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -125,16 +127,18 @@ model Collaborator {
   userId  Int
   role    String @default("editor")
 
-  event Event @relation(fields: [eventId], references: [id])
-  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
   id        Int      @id @default(autoincrement())
   userId    Int
+  eventId   Int
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  // user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
 }
