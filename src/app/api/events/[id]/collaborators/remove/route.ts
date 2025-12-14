@@ -50,6 +50,14 @@ export async function POST(
             }
         });
 
+        await prisma.notification.create({
+            data: {
+                userId: parsedUserId, // The user who was removed
+                eventId: parsedEventId,
+                message: `You've been removed as a collaborator from event "${event.title}"`,
+            }
+        });
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Remove collaborator error:", error);
@@ -67,4 +75,6 @@ export async function POST(
             { status: 500 }
         );
     }
+
+
 }

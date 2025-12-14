@@ -46,6 +46,7 @@
     "sonner": "^2.0.7",
     "sooner": "^1.1.1",
     "tailwind-merge": "^3.4.0",
+    "ws": "^8.18.3",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

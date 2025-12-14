@@ -133,10 +133,19 @@ model Collaborator {
   @@unique([eventId, userId])
 }
 
+enum NotificationType {
+  EVENT_REMINDER
+  COLLABORATOR_ADDED
+  COLLABORATOR_REMOVED
+  EVENT_UPDATED
+  EVENT_DELETED
+}
+
 model Notification {
   id        Int      @id @default(autoincrement())
   userId    Int
   eventId   Int
+  type      String?
   message   String
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())

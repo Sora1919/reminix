@@ -287,7 +287,7 @@ export default function EventCollaborators({
                         {collaborators.map((collaborator) => (
                             <div
                                 key={collaborator.id}
-                                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                                className="flex flex-col items-center justify-between gap-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 <div className="flex items-center gap-3">
                                     <div className="relative">

@@ -22,11 +22,11 @@ export async function POST(
             return NextResponse.json({ error: "Email is required" }, { status: 400 });
         }
 
-        // Parse IDs (NextAuth returns string, database uses number)
+        // Parse IDs
         const currentUserId = parseInt(session.user.id);
         const parsedEventId = parseInt(eventId);
 
-        // Check if user exists by email
+        // Find user by email
         const userToAdd = await prisma.user.findUnique({
             where: { email }
         });
@@ -45,7 +45,7 @@ export async function POST(
             return NextResponse.json({ error: "Event not found" }, { status: 404 });
         }
 
-        // Check if current user is the event creator
+        // Only creator can add collaborators
         if (event.creatorId !== currentUserId) {
             return NextResponse.json(
                 { error: "Only event creator can add collaborators" },
@@ -53,7 +53,7 @@ export async function POST(
             );
         }
 
-        // Check if user is trying to add themselves
+        // Don't add yourself
         if (userToAdd.id === currentUserId) {
             return NextResponse.json(
                 { error: "You cannot add yourself as a collaborator" },
@@ -61,12 +61,9 @@ export async function POST(
             );
         }
 
-        // Check if collaborator already exists
-        const existingCollaborator = event.collaborators.find(
-            c => c.userId === userToAdd.id
-        );
-
-        if (existingCollaborator) {
+        // Check if already a collaborator
+        const existing = event.collaborators.find(c => c.userId === userToAdd.id);
+        if (existing) {
             return NextResponse.json(
                 { error: "User is already a collaborator" },
                 { status: 400 }
@@ -89,6 +86,26 @@ export async function POST(
                         image: true
                     }
                 }
+            }
+        });
+
+        // ⭐⭐⭐ CREATE NOTIFICATION FOR THE ADDED USER ⭐⭐⭐
+        await prisma.notification.create({
+            data: {
+                userId: userToAdd.id, // Notification for the user who was added
+                eventId: parsedEventId,
+                type: "COLLABORATOR_ADDED",
+                message: `You've been added as a collaborator to event "${event.title}" by ${session.user.name || session.user.email}`,
+            }
+        });
+
+        // ⭐⭐⭐ OPTIONAL: Also notify the event creator (optional)
+        await prisma.notification.create({
+            data: {
+                userId: currentUserId, // Notification for the creator
+                eventId: parsedEventId,
+                message: `You added ${userToAdd.name || userToAdd.email} as a collaborator to "${event.title}"`,
+                isRead: true // Mark as read since they just performed the action
             }
         });
 

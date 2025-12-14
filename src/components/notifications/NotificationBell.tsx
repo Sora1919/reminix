@@ -2,7 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, Check, Trash2 } from "lucide-react";
+import { Bell, UserPlus, UserMinus, Calendar, Loader2 } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuTrigger,
@@ -13,7 +13,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react"; // ADD THIS IMPORT
 
+// UPDATE INTERFACE - Add type field
 interface Notification {
     id: number;
     userId: number;
@@ -21,6 +23,7 @@ interface Notification {
     message: string;
     isRead: boolean;
     createdAt: string;
+    type?: string; // ADD THIS - make it optional since your DB might not have it yet
     event?: {
         id: number;
         title: string;
@@ -29,8 +32,12 @@ interface Notification {
 }
 
 export default function NotificationBell() {
+    const { data: session } = useSession(); // GET SESSION
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(false);
+
+    // Get current user ID
+    const currentUserId = session?.user?.id ? parseInt(session.user.id) : null;
 
     async function loadNotifications() {
         try {
@@ -72,13 +79,16 @@ export default function NotificationBell() {
         try {
             const unreadNotifications = notifications.filter(n => !n.isRead);
 
-            for (const notification of unreadNotifications) {
-                await fetch("/api/notifications", {
-                    method: "PATCH",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ id: notification.id }),
-                });
-            }
+            // Use Promise.all for better performance
+            await Promise.all(
+                unreadNotifications.map(notification =>
+                    fetch("/api/notifications", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: notification.id }),
+                    })
+                )
+            );
 
             setNotifications(prev =>
                 prev.map(n => ({ ...n, isRead: true }))
@@ -104,6 +114,20 @@ export default function NotificationBell() {
         }
     }
 
+    // FIX: Add default value for type parameter
+    const getNotificationIcon = (type?: string) => {
+        switch (type) {
+            case "COLLABORATOR_ADDED":
+                return <UserPlus className="h-4 w-4 text-green-500" />;
+            case "COLLABORATOR_REMOVED":
+                return <UserMinus className="h-4 w-4 text-red-500" />;
+            case "EVENT_REMINDER":
+                return <Calendar className="h-4 w-4 text-blue-500" />;
+            default:
+                return <Bell className="h-4 w-4 text-gray-500" />;
+        }
+    };
+
     useEffect(() => {
         loadNotifications();
 
@@ -112,6 +136,8 @@ export default function NotificationBell() {
 
         return () => clearInterval(interval);
     }, []);
+
+
 
     const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -152,40 +178,45 @@ export default function NotificationBell() {
                 <DropdownMenuSeparator />
 
                 {loading ? (
-                    <DropdownMenuItem disabled>
+                    <DropdownMenuItem disabled className="flex justify-center">
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
                         Loading notifications...
                     </DropdownMenuItem>
                 ) : notifications.length === 0 ? (
-                    <DropdownMenuItem disabled className="text-gray-500">
+                    <DropdownMenuItem disabled className="text-gray-500 text-center py-4">
                         No notifications yet
                     </DropdownMenuItem>
                 ) : (
                     notifications.map((notification) => (
                         <DropdownMenuItem
                             key={notification.id}
-                            className={`flex flex-col items-start p-3 cursor-pointer ${
-                                !notification.isRead ? "bg-blue-50" : ""
-                            }`}
+                            className="flex flex-col items-start p-3 cursor-pointer hover:bg-gray-50"
                             onClick={() => markAsRead(notification.id)}
                         >
-                            <div className="flex justify-between w-full">
-                                <span className={`font-medium ${notification.isRead ? "text-gray-600" : "text-gray-900"}`}>
-                                    {notification.message}
-                                </span>
-                                {!notification.isRead && (
-                                    <span className="inline-block w-2 h-2 bg-blue-500 rounded-full ml-2"></span>
-                                )}
+                            <div className="flex items-start gap-2 w-full">
+                                <div className="mt-1">
+                                    {/* FIX: Pass notification.type */}
+                                    {getNotificationIcon(notification.type)}
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-start">
+                                        <p className={`text-sm ${notification.isRead ? "text-gray-600" : "font-medium text-gray-900"}`}>
+                                            {notification.message}
+                                        </p>
+                                        {!notification.isRead && (
+                                            <span className="inline-block w-2 h-2 bg-blue-500 rounded-full ml-2 flex-shrink-0"></span>
+                                        )}
+                                    </div>
+                                    {notification.event && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Event: {notification.event.title}
+                                        </p>
+                                    )}
+                                    <p className="text-xs text-gray-400 mt-1">
+                                        {new Date(notification.createdAt).toLocaleString()}
+                                    </p>
+                                </div>
                             </div>
-
-                            {notification.event && (
-                                <span className="text-sm text-gray-500 mt-1">
-                                    Event: {notification.event.title}
-                                </span>
-                            )}
-
-                            <span className="text-xs text-gray-400 mt-2">
-                                {new Date(notification.createdAt).toLocaleString()}
-                            </span>
                         </DropdownMenuItem>
                     ))
                 )}
