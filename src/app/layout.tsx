@@ -3,9 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import { Toaster } from "sonner";
-// import '@fullcalendar/common/main.css';
-// import '@fullcalendar/daygrid/main.css';
-// import '@fullcalendar/timegrid/main.css';
+
 
 
 

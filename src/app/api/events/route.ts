@@ -1,3 +1,4 @@
+// app/api/events/route.ts (UPDATED VERSION)
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
@@ -26,79 +27,92 @@ export async function GET(req: Request) {
         const start = searchParams.get("start");
         const end = searchParams.get("end");
         const search = searchParams.get("search");
+        const include = searchParams.get("include"); // New: control what to include
 
         // 3. BASE WHERE CLAUSE - USER CAN ONLY SEE THEIR EVENTS
         const whereClause: any = {
             OR: [
-                // Events created by the user
                 { creatorId: currentUserId },
-                // Events where user is a collaborator
-                {
-                    collaborators: {
-                        some: {
-                            userId: currentUserId
-                        }
-                    }
-                }
+                { collaborators: { some: { userId: currentUserId } } }
             ]
         };
 
         // 4. APPLY ADDITIONAL FILTERS
         if (search) {
-            whereClause.AND = [
-                ...(whereClause.AND || []),
-                {
-                    OR: [
-                        { title: { contains: search, mode: "insensitive" } },
-                        { description: { contains: search, mode: "insensitive" } }
-                    ]
-                }
-            ];
+            whereClause.AND = whereClause.AND || [];
+            whereClause.AND.push({
+                OR: [
+                    { title: { contains: search, mode: "insensitive" } },
+                    { description: { contains: search, mode: "insensitive" } }
+                ]
+            });
         }
 
         // CATEGORY FILTER
         if (categoryId) {
-            whereClause.AND = [
-                ...(whereClause.AND || []),
-                { categoryId: Number(categoryId) }
-            ];
+            whereClause.AND = whereClause.AND || [];
+            whereClause.AND.push({ categoryId: Number(categoryId) });
         }
 
         // PRIORITY FILTER
         if (priority) {
-            whereClause.AND = [
-                ...(whereClause.AND || []),
-                { priority: priority.toUpperCase() }
-            ];
+            whereClause.AND = whereClause.AND || [];
+            whereClause.AND.push({ priority: priority.toUpperCase() });
         }
 
-        // DATE RANGE FILTERS
+        // DATE RANGE FILTERS - FIXED for better performance
         if (start && end) {
-            whereClause.AND = [
-                ...(whereClause.AND || []),
-                {
-                    startDate: {
-                        gte: new Date(start),
-                        lt: new Date(end),
+            whereClause.AND = whereClause.AND || [];
+            const startDate = new Date(start);
+            const endDate = new Date(end);
+
+            // Events that overlap with the range
+            whereClause.AND.push({
+                OR: [
+                    // Events starting in range
+                    {
+                        AND: [
+                            { startDate: { gte: startDate } },
+                            { startDate: { lt: endDate } }
+                        ]
+                    },
+                    // Events ending in range
+                    {
+                        AND: [
+                            { endDate: { gte: startDate } },
+                            { endDate: { lt: endDate } }
+                        ]
+                    },
+                    // Events spanning across range
+                    {
+                        AND: [
+                            { startDate: { lt: endDate } },
+                            { endDate: { gt: startDate } }
+                        ]
                     }
-                }
-            ];
+                ]
+            });
         } else if (month && year) {
-            whereClause.AND = [
-                ...(whereClause.AND || []),
-                {
-                    startDate: {
-                        gte: new Date(year, month - 1, 1),
-                        lt: new Date(year, month, 1),
-                    }
+            whereClause.AND = whereClause.AND || [];
+            whereClause.AND.push({
+                startDate: {
+                    gte: new Date(year, month - 1, 1),
+                    lt: new Date(year, month, 1),
                 }
-            ];
+            });
         }
 
-        // 5. FETCH EVENTS WITH FILTERS
-        const events = await prisma.event.findMany({
+        // 5. BUILD QUERY BASED ON WHAT WE NEED TO INCLUDE
+        // Default: minimal fields for performance
+        let queryOptions: any = {
             where: whereClause,
-            include: {
+            orderBy: { startDate: 'asc' },
+            take: 500 // Safety limit
+        };
+
+        if (include === "true") {
+            // Full data with relations
+            queryOptions.include = {
                 category: true,
                 recurrence: true,
                 collaborators: {
@@ -120,12 +134,31 @@ export async function GET(req: Request) {
                         email: true,
                         image: true
                     }
-                },
-            },
-            orderBy: {
-                startDate: 'asc'
-            }
-        });
+                }
+            };
+        } else {
+            // Minimal fields for calendar/list views
+            queryOptions.select = {
+                id: true,
+                title: true,
+                description: true,
+                startDate: true,
+                endDate: true,
+                location: true,
+                priority: true,
+                creatorId: true,
+                category: {
+                    select: {
+                        id: true,
+                        name: true,
+                        color: true
+                    }
+                }
+            };
+        }
+
+        // 6. FETCH EVENTS
+        const events = await prisma.event.findMany(queryOptions);
 
         return NextResponse.json(events);
     } catch (e) {
@@ -174,7 +207,25 @@ export async function POST(req: Request) {
             );
         }
 
-        // 4. HANDLE RECURRENCE
+        // 4. VALIDATE DATES
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            return NextResponse.json(
+                { error: "Invalid date format" },
+                { status: 400 }
+            );
+        }
+
+        if (start >= end) {
+            return NextResponse.json(
+                { error: "End date must be after start date" },
+                { status: 400 }
+            );
+        }
+
+        // 5. HANDLE RECURRENCE
         let recurrenceRecord = null;
 
         if (recurrence) {
@@ -189,18 +240,18 @@ export async function POST(req: Request) {
             });
         }
 
-        // 5. CREATE EVENT - Use authenticated user's ID
+        // 6. CREATE EVENT
         const event = await prisma.event.create({
             data: {
                 title,
                 description,
-                startDate: new Date(startDate),
-                endDate: new Date(endDate),
+                startDate: start,
+                endDate: end,
                 location,
                 priority,
                 categoryId: categoryId ? Number(categoryId) : null,
                 notifyBefore,
-                creatorId: currentUserId, // Use authenticated user
+                creatorId: currentUserId,
                 recurrenceId: recurrenceRecord?.id ?? null,
             },
             include: {
