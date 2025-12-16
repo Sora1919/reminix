@@ -14,9 +14,9 @@ datasource db {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
+  id            Int                   @id @default(autoincrement())
   name          String?
-  email         String         @unique
+  email         String                @unique
   password      String?
   image         String?
   accounts      Account[]
@@ -24,7 +24,10 @@ model User {
   events        Event[]
   collaborators Collaborator[]
   notifications Notification[]
-  createdAt     DateTime       @default(now())
+  messages      ChatMessage[]
+  reactions     MessageReaction[]
+  participants  ChatRoomParticipant[]
+  createdAt     DateTime              @default(now())
 }
 
 model Account {
@@ -86,6 +89,7 @@ model Event {
 
   collaborators Collaborator[]
   notifications Notification[]
+  chatroom      ChatRoom[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -152,4 +156,68 @@ model Notification {
 
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+}
+
+model ChatRoom {
+  id          Int      @id @default(autoincrement())
+  eventId     Int      @unique // One chat room per event
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(true)
+
+  event        Event                 @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  messages     ChatMessage[]
+  participants ChatRoomParticipant[]
+}
+
+model ChatRoomParticipant {
+  id         Int      @id @default(autoincrement())
+  chatRoomId Int
+  userId     Int
+  joinedAt   DateTime @default(now())
+  role       String   @default("member") // "admin" (creator), "member"
+  isMuted    Boolean  @default(false)
+
+  chatRoom ChatRoom @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([chatRoomId, userId])
+}
+
+model ChatMessage {
+  id          Int      @id @default(autoincrement())
+  chatRoomId  Int
+  userId      Int
+  content     String
+  messageType String   @default("text") // "text", "file", "link", "system"
+  fileUrl     String? // For file messages
+  fileName    String? // Original filename
+  fileSize    Int? // In bytes
+  metadata    Json? // { width, height, duration } for media
+  isEdited    Boolean  @default(false)
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  chatRoom  ChatRoom          @relation(fields: [chatRoomId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reactions MessageReaction[]
+  replies   ChatMessage?      @relation("MessageReplies", fields: [replyToId], references: [id])
+  replyToId Int?
+  repliesTo ChatMessage[]     @relation("MessageReplies")
+}
+
+model MessageReaction {
+  id        Int      @id @default(autoincrement())
+  messageId Int
+  userId    Int
+  emoji     String // e.g., "👍", "❤️", "😂"
+  createdAt DateTime @default(now())
+
+  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
 }
