@@ -73,8 +73,8 @@ export async function GET(
 
         // Get messages
         const messages = await prisma.chatMessage.findMany({
-            where,
-            take: limit,
+            where : { chatRoomId: chatRoom.id, isDeleted: false },
+            take: 50,
             orderBy: { createdAt: "desc" },
             include: {
                 user: {

@@ -16,7 +16,7 @@ export async function POST(
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const currentUserId = parseInt(session.user.id);
+        const userId = parseInt(session.user.id);
         const eventId = parseInt(id);
         const { messageId, emoji } = await req.json();
 
@@ -27,12 +27,10 @@ export async function POST(
             );
         }
 
-        // Check access
+        // Check access to event
         const event = await prisma.event.findUnique({
             where: { id: eventId },
-            include: {
-                collaborators: true,
-            },
+            include: { collaborators: true },
         });
 
         if (!event) {
@@ -40,22 +38,17 @@ export async function POST(
         }
 
         const hasAccess =
-            event.creatorId === currentUserId ||
-            event.collaborators.some(c => c.userId === currentUserId);
+            event.creatorId === userId ||
+            event.collaborators.some(c => c.userId === userId);
 
         if (!hasAccess) {
-            return NextResponse.json(
-                { error: "Access denied" },
-                { status: 403 }
-            );
+            return NextResponse.json({ error: "Access denied" }, { status: 403 });
         }
 
         // Check if message exists
         const message = await prisma.chatMessage.findUnique({
             where: { id: messageId },
-            include: {
-                chatRoom: true,
-            },
+            include: { chatRoom: true },
         });
 
         if (!message) {
@@ -72,12 +65,12 @@ export async function POST(
             );
         }
 
-        // Add or toggle reaction
+        // Check for existing reactions
         const existingReaction = await prisma.messageReaction.findUnique({
             where: {
                 messageId_userId_emoji: {
                     messageId,
-                    userId: currentUserId,
+                    userId,
                     emoji,
                 },
             },
@@ -86,17 +79,16 @@ export async function POST(
         let reaction;
 
         if (existingReaction) {
-            // Remove reaction
+            // Remove reactions if it exists
             await prisma.messageReaction.delete({
                 where: { id: existingReaction.id },
             });
-            reaction = null;
         } else {
-            // Add reaction
+            // Add reactions
             reaction = await prisma.messageReaction.create({
                 data: {
                     messageId,
-                    userId: currentUserId,
+                    userId,
                     emoji,
                 },
                 include: {
@@ -135,7 +127,7 @@ export async function POST(
     } catch (error) {
         console.error("Reaction error:", error);
         return NextResponse.json(
-            { error: "Failed to update reaction" },
+            { error: "Failed to update reactions" },
             { status: 500 }
         );
     }

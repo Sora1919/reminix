@@ -264,7 +264,7 @@ export function useChat(eventId: number) {
         return result.data;
     }, [eventId, session?.user?.id]);
 
-    // Add reaction
+    // Add reactions
     const addReaction = useCallback(async (messageId: number, emoji: string) => {
         if (!session?.user?.id) throw new Error("Not authenticated");
 
@@ -276,7 +276,7 @@ export function useChat(eventId: number) {
 
         if (!response.ok) {
             const error = await response.json();
-            throw new Error(error.error || "Failed to add reaction");
+            throw new Error(error.error || "Failed to add reactions");
         }
 
         const result = await response.json();
