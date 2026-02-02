@@ -1,9 +1,9 @@
 import NextAuth, { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import prisma from "@/lib/prisma"
 import bcrypt from "bcryptjs";
-
+import prisma from "@/lib/prisma";
+import { isValidEmail, normalizeEmail } from "@/lib/auth/validation";
 
 export const authOptions: AuthOptions = {
     adapter: PrismaAdapter(prisma),
@@ -25,23 +25,30 @@ export const authOptions: AuthOptions = {
                 password: { label: "Password", type: "password" },
             },
 
-            // ⬇ FULLY TYPED AUTHORIZE FUNCTION
             async authorize(credentials) {
                 if (!credentials?.email || !credentials.password) {
-                    throw new Error("Missing email or password");
+                    throw new Error("Invalid credentials");
+                }
+
+                const normalizedEmail = normalizeEmail(credentials.email);
+                if (!isValidEmail(normalizedEmail)) {
+                    throw new Error("Invalid credentials");
                 }
 
                 const user = await prisma.user.findUnique({
-                    where: { email: credentials.email },
+                    where: { email: normalizedEmail },
                 });
 
                 if (!user || !user.password) {
-                    throw new Error("User not found");
+                    throw new Error("Invalid credentials");
                 }
 
-                const isValid = await bcrypt.compare(credentials.password, user.password);
-                if (!isValid) {
-                    throw new Error("Invalid password");
+                const isValidPassword = await bcrypt.compare(
+                    credentials.password,
+                    user.password
+                );
+                if (!isValidPassword) {
+                    throw new Error("Invalid credentials");
                 }
 
                 return {
@@ -54,16 +61,14 @@ export const authOptions: AuthOptions = {
         }),
     ],
 
-    // ⬇ FULLY TYPED JWT CALLBACK
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
-                token.id = user.id; // safe because of type declaration
+                token.id = user.id;
             }
             return token;
         },
 
-        // ⬇ FULLY TYPED SESSION CALLBACK
         async session({ session, token }) {
             if (session.user && token.id) {
                 session.user.id = token.id;

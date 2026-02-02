@@ -1,65 +1,13 @@
-// import bcrypt from "bcryptjs";
-// import { NextResponse } from "next/server";
-// import prisma from "@/lib/prisma";
-//
-// export async function POST(req: Request) {
-//     try {
-//         console.log("Register Api is called");
-//
-//         const body = await req.json();
-//         console.log("Received body:", body);
-//
-//         const { name, email, password } = body;
-//
-//         if (!name || !email || !password) {
-//             console.log("❌ Some field is missing.");
-//             return NextResponse.json(
-//                 {message: "All fields are required"},
-//                 {status: 400}
-//             );
-//         }
-//
-//         const existingUser = await prisma.user.findUnique({
-//             where: { email },
-//         });
-//
-//         if (existingUser) {
-//             console.log("❌ Email already exists");
-//             return NextResponse.json(
-//                 {message: "Email already exists"},
-//                 {status: 400}
-//             );
-//         }
-//
-//         const hashedPassword = await bcrypt.hash(password, 10);
-//
-//         const newUser = await prisma.user.create({
-//             data: {
-//                 name,
-//                 email,
-//                 password: hashedPassword,
-//             },
-//         });
-//
-//         console.log("✅ User created:", newUser);
-//
-//         return NextResponse.json(
-//             { message: "User registered successfully" },
-//             { status: 201 }
-//         );
-//     } catch (err) {
-//         console.error("❌ Register Error:", err);
-//         return NextResponse.json(
-//             { message: "Server error", error: err },
-//             { status: 500 }
-//         );
-//     }
-// }
-
-
-import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
+import {
+    isStrongPassword,
+    isValidEmail,
+    normalizeEmail,
+    normalizeName,
+    PASSWORD_MIN_LENGTH,
+} from "@/lib/auth/validation";
 
 export async function POST(req: Request) {
     try {
@@ -72,8 +20,34 @@ export async function POST(req: Request) {
             );
         }
 
+        const normalizedEmail = normalizeEmail(email);
+        const normalizedName = normalizeName(name);
+
+        if (!isValidEmail(normalizedEmail)) {
+            return NextResponse.json(
+                { error: "Invalid email address" },
+                { status: 400 }
+            );
+        }
+
+        if (normalizedName.length < 2 || normalizedName.length > 50) {
+            return NextResponse.json(
+                { error: "Name must be between 2 and 50 characters" },
+                { status: 400 }
+            );
+        }
+
+        if (!isStrongPassword(password)) {
+            return NextResponse.json(
+                {
+                    error: `Password must be at least ${PASSWORD_MIN_LENGTH} characters and include uppercase, lowercase, and a number`,
+                },
+                { status: 400 }
+            );
+        }
+
         const existingUser = await prisma.user.findUnique({
-            where: { email },
+            where: { email: normalizedEmail },
         });
 
         if (existingUser) {
@@ -83,12 +57,12 @@ export async function POST(req: Request) {
             );
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const hashedPassword = await bcrypt.hash(password, 12);
 
-        const user = await prisma.user.create({
+        await prisma.user.create({
             data: {
-                name,
-                email,
+                name: normalizedName,
+                email: normalizedEmail,
                 password: hashedPassword,
             },
         });
