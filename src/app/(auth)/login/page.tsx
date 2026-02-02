@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 
 import { Mail, Lock } from "lucide-react";
 import {toast} from "sonner";
+import Image from "next/image";
 
 export default function LoginPage() {
     const router = useRouter();
@@ -51,12 +52,18 @@ export default function LoginPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
 
             {/* Left Section */}
-            <div className="bg-blue-600 text-white flex flex-col justify-center items-center p-10">
-                <h1 className="text-4xl font-bold mb-4">Welcome to REMINIX</h1>
-                <p className="text-lg opacity-90 text-center max-w-md">
-                    Plan events, manage tasks, collaborate with your team — all in one place.
-                </p>
+            <div className="relative flex items-center justify-center bg-blue-950 p-6 min-h-[50vh] md:min-h-screen">
+                <div className="relative w-full h-full max-w-5xl">
+                    <Image
+                        src="/login.png"
+                        alt="Join Reminix illustration"
+                        fill
+                        className="object-contain"
+                        priority
+                    />
+                </div>
             </div>
+
 
             {/* Right Section */}
             <div className="flex items-center justify-center p-6">

@@ -17,7 +17,7 @@ export default function QuickActions() {
                 <Button variant="ghost" className="w-full" onClick={() => router.push("/dashboard/categories")}>
                     <Tag size={16} className="mr-2" /> Create Category
                 </Button>
-                <Button variant="outline" className="w-full" onClick={() => router.push("/dashboard/calendar")}>
+                <Button variant="outline" className="w-full" onClick={() => router.push("/calendar")}>
                     <CalendarPlus size={16} className="mr-2" /> Open Calendar
                 </Button>
             </div>

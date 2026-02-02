@@ -1,4 +1,3 @@
-// app/api/jobs/check-notifications/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { checkAndCreateNotifications } from "@/lib/notification-service";
 

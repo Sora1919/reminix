@@ -13,9 +13,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react"; // ADD THIS IMPORT
+import { useSession } from "next-auth/react";
 
-// UPDATE INTERFACE - Add type field
+
 interface Notification {
     id: number;
     userId: number;
@@ -23,7 +23,7 @@ interface Notification {
     message: string;
     isRead: boolean;
     createdAt: string;
-    type?: string; // ADD THIS - make it optional since your DB might not have it yet
+    type?: string;
     event?: {
         id: number;
         title: string;
@@ -114,7 +114,7 @@ export default function NotificationBell() {
         }
     }
 
-    // FIX: Add default value for type parameter
+    // Add default value for type parameter
     const getNotificationIcon = (type?: string) => {
         switch (type) {
             case "COLLABORATOR_ADDED":

@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 
 import { User, Mail, Lock } from "lucide-react";
 import {toast} from "sonner";
+import Image from "next/image";
+
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -74,11 +76,16 @@ export default function RegisterPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 min-h-screen">
 
             {/* Left Section */}
-            <div className="bg-green-600 text-white flex flex-col justify-center items-center p-10">
-                <h1 className="text-4xl font-bold mb-4">Join REMINIX</h1>
-                <p className="text-lg opacity-90 text-center max-w-md">
-                    Create your account and streamline event planning with your team.
-                </p>
+            <div className="relative flex items-center justify-center bg-green-950 p-6 min-h-[50vh] md:min-h-screen">
+                <div className="relative w-full h-full max-w-5xl">
+                    <Image
+                        src="/Register.png"
+                        alt="Join Reminix illustration"
+                        fill
+                        className="object-contain"
+                        priority
+                    />
+                </div>
             </div>
 
             {/* Right Section */}

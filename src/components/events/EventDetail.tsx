@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, CalendarDays, MapPin, Bell, Users, ArrowLeft, Clock } from "lucide-react";
+import { Loader2, CalendarDays, MapPin, Bell, Users, ArrowLeft, Clock, Trash2, SquarePen } from "lucide-react";
 import { toast } from "sonner";
+import { MessageSquare } from "lucide-react";
+import Link from "next/link";
 
 export default function EventDetail({ id }: { id: string }) {
     const router = useRouter();
@@ -171,11 +173,20 @@ export default function EventDetail({ id }: { id: string }) {
                             className="bg-green-600"
                             onClick={() => router.push(`/events/${event.id}/edit`)}
                         >
-                            Edit
+                            Edit 
+                            <SquarePen className="h-4 w-4"/>
                         </Button>
 
-                        <Button variant="destructive" onClick={handleDelete}>
-                            Delete
+                        <Button className="bg-red-600" onClick={handleDelete}>
+                            Delete 
+                            <Trash2 className="h-4 w-4"/>
+                        </Button>
+
+                        <Button asChild className="bg-blue-600">
+                            <Link href={`/events/${id}/chat`} className="flex items-center gap-2">
+                                Open Chat
+                                <MessageSquare className="h-4 w-4" />
+                            </Link>
                         </Button>
                     </div>
                 </CardContent>

@@ -119,8 +119,7 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
 }
 
 // --------------------- DELETE ---------------------
-export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {
-    const { id } = await context.params; // ADD 'await' HERE
+export async function DELETE(request: Request, context: { params: Promise<{ id: string }> }) {const { id } = await context.params;
 
     try {
         const event = await prisma.event.delete({
