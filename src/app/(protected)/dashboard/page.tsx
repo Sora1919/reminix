@@ -1,12 +1,14 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
+import { endOfWeek, formatDistanceToNow, startOfWeek } from "date-fns";
 import StatsCard from "@/components/dashboard/StatsCard";
 import QuickActions from "@/components/dashboard/QuickActions";
 import UpcomingEvents from "@/components/dashboard/UpcomingEvents";
 import MiniCalendar from "@/components/dashboard/MiniCalendar";
 import Notifications from "@/components/dashboard/Notifications";
 import ActivityFeed from "@/components/dashboard/ActivityFeed";
+import prisma from "@/lib/prisma"
 
 export default async function DashboardPage() {
     const session = await getServerSession(authOptions);
@@ -15,38 +17,109 @@ export default async function DashboardPage() {
         redirect("/login");
     }
 
-    const mockStats = {
-        thisWeek: 12,
-        completed: 5,
-        collaborations: 3,
-        notifications: 8,
+    const userId = Number(session.user.id);
+    const now = new Date();
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+
+    const [eventsThisWeek, completedEvents, collaborationsCount, unreadNotifications] =
+        await Promise.all([
+            prisma.event.count({
+                where: {
+                    creatorId: userId,
+                    startDate: {
+                        gte: weekStart,
+                        lte: weekEnd,
+                    },
+                },
+            }),
+            prisma.event.count({
+                where: {
+                    creatorId: userId,
+                    endDate: {
+                        lt: now,
+                    },
+                },
+            }),
+            prisma.collaborator.count({
+                where: { userId },
+            }),
+            prisma.notification.count({
+                where: {
+                    userId,
+                    isRead: false,
+                },
+            }),
+        ]);
+
+    const upcomingEvents = await prisma.event.findMany({
+        where: {
+            creatorId: userId,
+            startDate: {
+                gte: now,
+            },
+        },
+        orderBy: {
+            startDate: "asc",
+        },
+        take: 5,
+        include: {
+            category: true,
+        },
+    });
+
+    const recentNotifications = await prisma.notification.findMany({
+        where: { userId },
+        orderBy: {
+            createdAt: "desc",
+        },
+        take: 5,
+    });
+
+    const recentEvents = await prisma.event.findMany({
+        where: { creatorId: userId },
+        orderBy: {
+            createdAt: "desc",
+        },
+        take: 5,
+    });
+
+    const stats = {
+        thisWeek: eventsThisWeek,
+        completed: completedEvents,
+        collaborations: collaborationsCount,
+        notifications: unreadNotifications,
     };
 
-    const mockEvents = [
-        { id: 1, title: "Sprint Planning", date: "2025-12-06T09:00:00.000Z", location: "Zoom", category: "Meeting" },
-        { id: 2, title: "Design Review", date: "2025-12-07T13:00:00.000Z", location: "Room A", category: "Review" },
-        { id: 3, title: "User Testing", date: "2025-12-08T15:30:00.000Z", location: "Lab", category: "Testing" },
-    ];
+    const upcomingEventItems = upcomingEvents.map((event) => ({
+        id: event.id,
+        title: event.title,
+        date: event.startDate.toISOString(),
+        location: event.location ?? "TBA",
+        category: event.category?.name ?? "General",
+    }));
 
-    const mockNotifications = [
-        { id: 1, text: "Alice invited you to Event: Design Review", time: "2h" },
-        { id: 2, text: "Reminder: Sprint Planning in 1 hour", time: "3h" },
-    ];
+    const notificationItems = recentNotifications.map((notification) => ({
+        id: notification.id,
+        text: notification.message,
+        time: formatDistanceToNow(notification.createdAt, { addSuffix: true }),
+    }));
 
-    const mockActivities = [
-        { id: 1, text: "You created event 'Sprint Planning'", time: "1d" },
-        { id: 2, text: "Bob joined 'Design Review' as collaborator", time: "2d" },
-    ];
+    const activityItems = recentEvents.map((event) => ({
+        id: event.id,
+        text: `You created event "${event.title}"`,
+        time: formatDistanceToNow(event.createdAt, { addSuffix: true }),
+    }));
 
     return (
         <div className="space-y-6">
             {/* Top row: stats + quick actions */}
             <div className="flex flex-col lg:flex-row gap-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
-                    <StatsCard title="Events this week" value={mockStats.thisWeek} />
-                    <StatsCard title="Completed" value={mockStats.completed} />
-                    <StatsCard title="Collaborations" value={mockStats.collaborations} />
-                    <StatsCard title="Notifications" value={mockStats.notifications} />
+                    <StatsCard title="Events this week" value={stats.thisWeek} />
+                    <StatsCard title="Completed" value={stats.completed} />
+                    <StatsCard title="Collaborations" value={stats.collaborations} />
+                    <StatsCard title="Notifications" value={stats.notifications} />
                 </div>
 
                 <div className="w-full lg:w-72">
@@ -57,20 +130,20 @@ export default async function DashboardPage() {
             {/* Middle row: upcoming events + mini calendar */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
-                    <UpcomingEvents events={mockEvents} />
+                    <UpcomingEvents events={upcomingEventItems} />
                 </div>
 
                 <div>
-                    <MiniCalendar events={mockEvents} />
+                    <MiniCalendar events={upcomingEventItems} />
                     <div className="mt-4">
-                        <Notifications items={mockNotifications} />
+                        <Notifications items={notificationItems} />
                     </div>
                 </div>
             </div>
 
             {/* Bottom row: activity feed */}
             <div>
-                <ActivityFeed items={mockActivities} />
+                <ActivityFeed items={activityItems} />
             </div>
         </div>
     );

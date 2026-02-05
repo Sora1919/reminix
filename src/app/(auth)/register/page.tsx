@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -47,22 +48,24 @@ export default function RegisterPage() {
             });
 
             if (!res.ok) {
-                toast.error("Registration failed.");
+                const payload = (await res.json()) as { error?: string };
+                const message = payload.error ?? "Registration failed.";
+                setError(message);
+                toast.error(message);
             } else {
-                // Auto-login after registration
-                const signInRes = await fetch("/api/auth/callback/credentials", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        email: form.email,
-                        password: form.password,
-                    }),
+                const signInRes = await signIn("credentials", {
+                    email: form.email,
+                    password: form.password,
+                    redirect: false,
                 });
 
-                if (signInRes.ok) {
+                if (signInRes?.ok) {
                     toast.success("Registration successful");
                     router.push("/dashboard");
                     router.refresh();
+                } else {
+                    toast.success("Registration successful. Please log in.");
+                    router.push("/login");
                 }
             }
         } catch (error) {
