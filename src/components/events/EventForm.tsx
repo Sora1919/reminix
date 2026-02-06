@@ -485,7 +485,7 @@ export default function EventForm({
                             </Select>
                         </div>
 
-                        {/* Priority */}
+
                         <div>
                             <Label>Priority</Label>
                             <RadioGroup value={priority} onValueChange={(v) => setPriority(v as any)}>
