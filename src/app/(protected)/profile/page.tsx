@@ -73,20 +73,19 @@ export default function ProfilePage() {
         }
     }
 
-
     return (
         <div className="max-w-5xl mx-auto space-y-6 p-4 md:p-8">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Profile</h1>
                     <p className="text-muted-foreground">
-                        Manage your personal information and apperance.
+                        Manage your personal information and appearance.
                     </p>
                 </div>
                 <ThemeToggle />
             </div>
 
-            <div className="rounded-2xl border bg-gradient-to-r from-indigo-500/10 via-sky-500/10 to-emerald-500/10 p-6">
+            <div className="rounded-2xl border bg-linear-to-r from-indigo-500/10 via-sky-500/10 to-emerald-500/10 p-6">
                 <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                     <div className="flex items-center gap-4">
                         <div className="relative">
@@ -96,8 +95,8 @@ export default function ProfilePage() {
                                     <User className="h-8 w-8" />
                                 </AvatarFallback>
                             </Avatar>
-                            <div className="absolute -bottom-2 -right-2 rounded-full bg-white p-1 shadow">
-                                <Camera className="h-4 w-4 text-slate-600" />
+                            <div className="absolute -bottom-2 -right-2 rounded-full bg-background p-1 shadow">
+                                <Camera className="h-4 w-4 text-muted-foreground" />
                             </div>
                         </div>
                         <div>
@@ -110,7 +109,6 @@ export default function ProfilePage() {
                             </div>
                         </div>
                     </div>
-
                     <div className="flex gap-3">
                         <Button variant="outline" onClick={() => router.push("/calendar")}>
                             View Calendar
@@ -124,7 +122,7 @@ export default function ProfilePage() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-                <Card className="shadow-sm">
+                <Card className="shadow-sm bg-background">
                     <CardHeader>
                         <CardTitle>Profile Details</CardTitle>
                     </CardHeader>
@@ -159,37 +157,37 @@ export default function ProfilePage() {
                         </div>
 
                         {message ? (
-                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+                            <div className="rounded-lg border border-emerald-200/60 bg-emerald-50/80 px-4 py-2 text-sm text-emerald-700 dark:border-emerald-400/40 dark:bg-emerald-500/10 dark:text-emerald-200">
                                 {message}
                             </div>
                         ) : null}
 
                         {error ? (
-                            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-2 text-sm text-rose-700">
+                            <div className="rounded-lg border border-rose-200/70 bg-rose-50/80 px-4 py-2 text-sm text-rose-700 dark:border-rose-400/40 dark:bg-rose-500/10 dark:text-rose-200">
                                 {error}
                             </div>
                         ) : null}
                     </CardContent>
                 </Card>
 
-                <Card className="shadow-sm">
+                <Card className="shadow-sm bg-background">
                     <CardHeader>
                         <CardTitle>Account Summary</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4 text-sm text-muted-foreground">
-                        <div className="rounded-lg border bg-white p-4">
-                            <p className="text-xs uppercase tracking-wide text-slate-500">
+                        <div className="rounded-lg border bg-background p-4">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
                                 Status
                             </p>
-                            <p className="mt-2 text-base font-semibold text-slate-900">
+                            <p className="mt-2 text-base font-semibold text-foreground">
                                 Active member
                             </p>
                         </div>
-                        <div className="rounded-lg border bg-white p-4">
-                            <p className="text-xs uppercase tracking-wide text-slate-500">
+                        <div className="rounded-lg border bg-background p-4">
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
                                 Signed in as
                             </p>
-                            <p className="mt-2 break-all text-base font-semibold text-slate-900">
+                            <p className="mt-2 break-all text-base font-semibold text-foreground">
                                 {session?.user?.email ?? "email@example.com"}
                             </p>
                         </div>

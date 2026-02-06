@@ -45,8 +45,8 @@ export default function MiniCalendar({ events }: { events: Event[] }) {
                         const isEvent = eventDates.some((ed) => isSameDay(ed, day));
                         const isCurrentMonth = day.getMonth() === current.getMonth();
                         return (
-                            <div key={day.toString()} className={`p-2 rounded ${!isCurrentMonth ? "text-slate-400" : ""}`}>
-                                <div className={`inline-block w-6 h-6 leading-6 rounded-full ${isEvent ? "bg-blue-600 text-white" : ""}`}>
+                            <div key={day.toString()} className={`p-2 rounded ${!isCurrentMonth ? "text-muted-foreground" : ""}`}>
+                                <div className={`inline-block w-6 h-6 leading-6 rounded-full ${isEvent ? "bg-primary text-primary-foreground" : ""}`}>
                                     {format(day, "d")}
                                 </div>
                             </div>

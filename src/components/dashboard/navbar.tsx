@@ -13,11 +13,13 @@ export default function Navbar() {
         "?";
 
     return (
-        <header className="w-full bg-white shadow px-6 py-3 flex items-center justify-between">
-            <h1 className="text-xl font-semibold">Dashboard</h1>
+        <header className="w-full border-b bg-background px-6 py-3 flex items-center justify-between">
+            <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
 
             <div className="flex items-center gap-3">
-                <span>{session?.user?.name || session?.user?.email}</span>
+                <span className="text-sm text-muted-foreground">
+                    {session?.user?.name || session?.user?.email}
+                </span>
 
                 <Avatar>
                     <AvatarFallback>{initials}</AvatarFallback>

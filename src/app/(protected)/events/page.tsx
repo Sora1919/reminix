@@ -113,20 +113,20 @@ export default function EventsPage() {
     }
 
     return (
-        <div className="container mx-auto p-4 md:p-8">
+        <div className="container mx-auto p-4 md:p-8 text-foreground">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+                    <h1 className="text-3xl md:text-4xl font-bold text-muted-foreground">
                         Your Events
                     </h1>
-                    <p className="text-gray-600 mt-2">
+                    <p className="text-muted-foreground mt-2">
                         Manage and organize all your upcoming events
                     </p>
                 </div>
                 <Link
                     href="/events/create"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-lg font-medium transition-colors"
                 >
                     + Create New Event
                 </Link>
@@ -150,19 +150,19 @@ export default function EventsPage() {
 
             {/* Results Summary */}
             <div className="mb-6 flex justify-between items-center">
-                <p className="text-gray-600">
+                <p className="text-muted-foreground">
                     Showing <span className="font-semibold">{filteredEvents.length}</span> events
                 </p>
                 {loading && (
-                    <p className="text-blue-600 animate-pulse">Loading events...</p>
+                    <p className="text-primary animate-pulse">Loading events...</p>
                 )}
             </div>
 
             {/* Events List */}
             {loading ? (
                 <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <p className="mt-2 text-gray-600">Loading events...</p>
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="mt-2 text-muted-foreground">Loading events...</p>
                 </div>
             ) : (
                 <EventList events={filteredEvents} />
@@ -170,9 +170,9 @@ export default function EventsPage() {
 
             {/* Empty State */}
             {!loading && filteredEvents.length === 0 && (
-                <div className="text-center py-12 border-2 border-dashed border-gray-200 rounded-lg">
-                    <p className="text-gray-500 text-lg">No events found</p>
-                    <p className="text-gray-400 mt-2">
+                <div className="text-center py-12 border-2 border-dashed border-muted rounded-lg">
+                    <p className="text-muted-foreground text-lg">No events found</p>
+                    <p className="text-muted-foreground mt-2">
                         {events.length === 0
                             ? "Create your first event to get started!"
                             : "Try adjusting your filters"}
@@ -180,7 +180,7 @@ export default function EventsPage() {
                     {events.length === 0 && (
                         <Link
                             href="/events/create"
-                            className="inline-block mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg"
+                            className="inline-block mt-4 bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2 rounded-lg"
                         >
                             Create Your First Event
                         </Link>

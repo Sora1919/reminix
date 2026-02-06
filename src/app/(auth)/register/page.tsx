@@ -92,8 +92,8 @@ export default function RegisterPage() {
             </div>
 
             {/* Right Section */}
-            <div className="flex items-center justify-center p-6">
-                <Card className="w-full max-w-md shadow-lg">
+            <div className="flex items-center justify-center p-6 bg-background">
+                <Card className="w-full max-w-md shadow-lg bg-background">
                     <CardHeader>
                         <CardTitle className="text-2xl text-center">Register</CardTitle>
                     </CardHeader>
@@ -104,7 +104,7 @@ export default function RegisterPage() {
                             <div>
                                 <Label>Name</Label>
                                 <div className="relative">
-                                    <User className="absolute left-2 top-3 h-4 w-4 text-gray-500" />
+                                    <User className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         type="text"
                                         placeholder="Your Name"
@@ -122,7 +122,7 @@ export default function RegisterPage() {
                             <div>
                                 <Label>Email</Label>
                                 <div className="relative">
-                                    <Mail className="absolute left-2 top-3 h-4 w-4 text-gray-500" />
+                                    <Mail className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         type="email"
                                         placeholder="name@example.com"
@@ -140,7 +140,7 @@ export default function RegisterPage() {
                             <div>
                                 <Label>Password</Label>
                                 <div className="relative">
-                                    <Lock className="absolute left-2 top-3 h-4 w-4 text-gray-500" />
+                                    <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         type="password"
                                         placeholder="••••••••"
@@ -158,7 +158,7 @@ export default function RegisterPage() {
                                 <div>
                                     <Label>Confirm Password</Label>
                                     <div className="relative">
-                                        <Lock className="absolute left-2 top-3 h-4 w-4 text-gray-500" />
+                                        <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             type="password"
                                             placeholder="••••••••"
@@ -181,7 +181,7 @@ export default function RegisterPage() {
                             <p className="text-center text-sm mt-2">
                                 Already have an account?{" "}
                                 <span
-                                    className="text-green-600 cursor-pointer underline"
+                                    className="text-primary cursor-pointer underline"
                                     onClick={() => router.push("/login")}
                                 >
                                   Login

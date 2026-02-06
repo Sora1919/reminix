@@ -21,10 +21,10 @@ export default function CalendarPage() {
                                 Smart scheduling
                             </Badge>
                         </div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
+                        <h1 className="text-2xl md:text-3xl font-bold text-foreground">
                             Calendar
                         </h1>
-                        <p className="text-slate-600">
+                        <p className="text-muted-foreground">
                             Keep an eye on everything happening across your schedule and
                             jump into events with a single click.
                         </p>
@@ -49,16 +49,16 @@ export default function CalendarPage() {
             </section>
 
             <section className="grid gap-4 lg:grid-cols-[1fr_280px]">
-                <div className="rounded-2xl border bg-white p-4 shadow-sm md:p-6">
+                <div className="rounded-2xl border bg-background p-4 shadow-sm md:p-6">
                     <FullCalendarWrapper />
                 </div>
 
                 <aside className="space-y-4">
-                    <div className="rounded-2xl border bg-white p-4 shadow-sm">
-                        <h3 className="text-sm font-semibold text-slate-900">
+                    <div className="rounded-2xl border bg-background p-4 shadow-sm">
+                        <h3 className="text-sm font-semibold text-foreground">
                             Quick tips
                         </h3>
-                        <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                        <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
                             <li>• Click any event to view details and collaborators.</li>
                             <li>• Toggle Month, Week, or Day views to zoom in.</li>
                             <li>• Drag events to reschedule quickly.</li>
@@ -66,9 +66,9 @@ export default function CalendarPage() {
                         </ul>
                     </div>
 
-                    <div className="rounded-2xl border bg-slate-900 p-4 text-sm text-slate-100 shadow-sm">
+                    <div className="rounded-2xl border bg-foreground p-4 text-sm text-background shadow-sm">
                         <p className="font-semibold">Pro tip</p>
-                        <p className="mt-2 text-slate-200">
+                        <p className="mt-2 text-background/80">
                             Use recurring events for habits and routines so you never
                             miss the important stuff.
                         </p>

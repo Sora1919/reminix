@@ -49,10 +49,10 @@ export default function EventModal({
                 <div className="space-y-3 py-2">
                     {/* Date & Time */}
                     <div className="flex items-start gap-3">
-                        <Calendar className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                        <Calendar className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                         <div>
-                            <p className="text-sm font-medium text-gray-700">Date & Time</p>
-                            <div className="text-sm text-gray-600">
+                            <p className="text-sm font-medium text-foreground">Date & Time</p>
+                            <div className="text-sm text-muted-foreground">
                                 <p>Start: {formatDate(event.startDate)}</p>
                                 <p>End: {formatDate(event.endDate)}</p>
                             </div>
@@ -62,10 +62,10 @@ export default function EventModal({
                     {/* Location */}
                     {event.location && (
                         <div className="flex items-start gap-3">
-                            <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                            <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                             <div>
-                                <p className="text-sm font-medium text-gray-700">Location</p>
-                                <p className="text-sm text-gray-600">{event.location}</p>
+                                <p className="text-sm font-medium text-foreground">Location</p>
+                                <p className="text-sm text-muted-foreground">{event.location}</p>
                             </div>
                         </div>
                     )}
@@ -73,15 +73,15 @@ export default function EventModal({
                     {/* Category */}
                     {event.category && (
                         <div className="flex items-start gap-3">
-                            <Tag className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                            <Tag className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                             <div>
-                                <p className="text-sm font-medium text-gray-700">Category</p>
+                                <p className="text-sm font-medium text-foreground">Category</p>
                                 <div className="flex items-center gap-2">
                                     <div
                                         className="w-3 h-3 rounded-full"
                                         style={{ backgroundColor: event.category.color || "#4CAF50" }}
                                     />
-                                    <span className="text-sm text-gray-600">{event.category.name}</span>
+                                    <span className="text-sm text-muted-foreground">{event.category.name}</span>
                                 </div>
                             </div>
                         </div>
@@ -90,15 +90,15 @@ export default function EventModal({
                     {/* Priority */}
                     {event.priority && (
                         <div className="flex items-start gap-3">
-                            <Clock className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                            <Clock className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
                             <div>
                                 <p className="text-sm font-medium text-gray-700">Priority</p>
                                 <span className={`inline-block px-2 py-1 text-xs rounded ${
                                     event.priority === "HIGH"
                                         ? "bg-red-100 text-red-800"
                                         : event.priority === "MEDIUM"
-                                            ? "bg-yellow-100 text-yellow-800"
-                                            : "bg-green-100 text-green-800"
+                                            ? "bg-yellow-500/10 text-yellow-700 dark:text-yellow-300"
+                                            : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                                 }`}>
                                     {event.priority}
                                 </span>

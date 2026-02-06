@@ -8,7 +8,7 @@ export default function QuickActions() {
     const router = useRouter();
 
     return (
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-background p-4 rounded-lg border shadow-sm">
             <h3 className="font-semibold mb-3">Quick Actions</h3>
             <div className="space-y-2">
                 <Button className="w-full" onClick={() => router.push("/events/create")}>

@@ -24,14 +24,14 @@ export default function UpcomingEvents({ events }: { events: Event[] }) {
                     {events.map((e) => {
                         const dt = parseISO(e.date);
                         return (
-                            <div key={e.id} className="flex items-start justify-between p-2 border rounded hover:bg-slate-50">
+                            <div key={e.id} className="flex items-start justify-between p-2 border rounded hover:bg-muted/50">
                                 <div>
                                     <div className="font-semibold">{e.title}</div>
                                     <div className="text-sm text-muted-foreground">
                                         {format(dt, "eee, MMM d • hh:mm a")} • {e.location ?? "TBA"}
                                     </div>
                                 </div>
-                                <div className="text-xs px-2 py-1 rounded bg-slate-100 text-slate-700">{e.category}</div>
+                                <div className="text-xs px-2 py-1 rounded bg-muted text-muted-foreground">{e.category}</div>
                             </div>
                         );
                     })}

@@ -66,8 +66,8 @@ export default function LoginPage() {
 
 
             {/* Right Section */}
-            <div className="flex items-center justify-center p-6">
-                <Card className="w-full max-w-md shadow-lg">
+            <div className="flex items-center justify-center p-6 bg-background">
+                <Card className="w-full max-w-md shadow-lg bg-background">
                     <CardHeader>
                         <CardTitle className="text-2xl text-center">Login</CardTitle>
                     </CardHeader>
@@ -79,7 +79,7 @@ export default function LoginPage() {
                             <div>
                                 <Label>Email</Label>
                                 <div className="relative">
-                                    <Mail className="absolute left-2 top-3 h-4 w-4 text-gray-500" />
+                                    <Mail className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         type="email"
                                         placeholder="name@example.com"
@@ -96,7 +96,7 @@ export default function LoginPage() {
                             <div>
                                 <Label>Password</Label>
                                 <div className="relative">
-                                    <Lock className="absolute left-2 top-3 h-4 w-4 text-gray-500" />
+                                    <Lock className="absolute left-2 top-3 h-4 w-4 text-muted-foreground" />
                                     <Input
                                         type="password"
                                         placeholder="••••••••"
@@ -118,7 +118,7 @@ export default function LoginPage() {
                             <p className="text-center text-sm mt-2">
                                 Don’t have an account?{" "}
                                 <span
-                                    className="text-blue-600 cursor-pointer underline"
+                                    className="text-primary cursor-pointer underline"
                                     onClick={() => router.push("/register")}
                                 >
                                   Register
