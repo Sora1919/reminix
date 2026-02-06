@@ -40,7 +40,7 @@ export default function EventForm({
     onSuccess?: (event: any) => void;
 }) {
     const router = useRouter();
-    const { data: session, status } = useSession();
+    const { status } = useSession();
 
     // UI states
     const [startDate, setStartDate] = useState<Date | undefined>(new Date());
@@ -55,6 +55,7 @@ export default function EventForm({
     const [frequency, setFrequency] = useState<"DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY">("DAILY");
     const [interval, setInterval] = useState<number>(1);
     const [notifyBefore, setNotifyBefore] = useState<number>(30);
+    const [collaboratorEmails, setCollaboratorEmails] = useState("");
 
     // controlled inputs
     const [title, setTitle] = useState("");
@@ -72,7 +73,35 @@ export default function EventForm({
         { id: 3, name: "Health" },
     ];
 
-    const categoryList = categories ?? defaultCategories;
+    const [categoryList, setCategoryList] = useState(categories ?? defaultCategories);
+
+    useEffect(() => {
+        if (categories && categories.length > 0) {
+            setCategoryList(categories);
+            return;
+        }
+
+        let mounted = true;
+
+        async function loadCategories() {
+            try {
+                const res = await fetch("/api/categories");
+                if (!res.ok) return;
+
+                const data = (await res.json()) as { id: number; name: string }[];
+                if (mounted && data.length > 0) {
+                    setCategoryList(data);
+                }
+            } catch (error) {
+                console.error("Failed to load categories", error);
+            }
+        }
+
+        loadCategories();
+        return () => {
+            mounted = false;
+        };
+    }, [categories]);
 
     // combine date & time helper
     function combineDateTime(date: Date | undefined, time: string) {
@@ -191,10 +220,17 @@ export default function EventForm({
     async function handleSubmit(e: any) {
         e.preventDefault();
 
-        if (!title) {
+        const trimmedTitle = title.trim();
+        if (!trimmedTitle) {
             toast("Title is required");
             return;
         }
+
+        if (trimmedTitle.length < 3) {
+            toast("Title must be at least 3 characters");
+            return;
+        }
+
 
         const finalStart = combineDateTime(startDate, startTime);
         const finalEnd = combineDateTime(endDate, endTime);
@@ -204,10 +240,30 @@ export default function EventForm({
             return;
         }
 
+        if (finalStart >= finalEnd) {
+            toast("End date/time must be after start date/time");
+            return;
+        }
+
+        if (notifyBefore < 0 || notifyBefore > 10080) {
+            toast("Notify before must be between 0 and 10080 minutes (7 days)");
+            return;
+        }
+
+        if (recurrenceEnabled && interval < 1) {
+            toast("Recurrence interval must be at least 1");
+            return;
+        }
+
+        const parsedCollaboratorEmails = collaboratorEmails
+            .split(",")
+            .map((email) => email.trim().toLowerCase())
+            .filter(Boolean);
+
         setSubmitting(true);
 
         const payload: any = {
-            title,
+            title: trimmedTitle,
             description,
             location,
             startDate: finalStart,
@@ -215,6 +271,7 @@ export default function EventForm({
             priority,
             categoryId,
             notifyBefore,
+            collaboratorEmails: mode === "create" ? parsedCollaboratorEmails : undefined,
             recurrence: recurrenceEnabled
                 ? {
                     frequency,
@@ -226,10 +283,9 @@ export default function EventForm({
                 : null,
         };
 
-        // creatorId: for create, use current session; for edit, keep original if present
-        if (mode === "create") {
-            payload.creatorId = Number(session?.user?.id);
-        } else if (initialData?.creatorId) {
+
+        // creatorId for edit fallback only
+        if (mode === "edit" && initialData?.creatorId) {
             payload.creatorId = initialData.creatorId;
         }
 
@@ -244,9 +300,10 @@ export default function EventForm({
             });
 
             if (!res.ok) {
-                const errText = await res.text().catch(() => "");
-                console.error("Save event error:", errText);
-                toast("Failed to save event");
+                const errorPayload = (await res.json().catch(() => null)) as
+                    | { error?: string }
+                    | null;
+                toast(errorPayload?.error ?? "Failed to save event");
                 setSubmitting(false);
                 return;
             }
@@ -320,6 +377,21 @@ export default function EventForm({
                                     onChange={(e) => setLocation(e.target.value)}
                                 />
                             </div>
+
+                            {mode === "create" && (
+                                <div>
+                                    <Label>Invite collaborators (optional)</Label>
+                                    <Input
+                                        placeholder="alice@mail.com, bob@mail.com"
+                                        value={collaboratorEmails}
+                                        onChange={(e) => setCollaboratorEmails(e.target.value)}
+                                    />
+                                    <p className="mt-1 text-xs text-muted-foreground">
+                                        Separate multiple emails with commas.
+                                    </p>
+                                </div>
+                            )}
+
 
                             {/* Date Pickers */}
                             <div className="grid grid-cols-2 gap-4">

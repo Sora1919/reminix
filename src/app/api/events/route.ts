@@ -197,6 +197,7 @@ export async function POST(req: Request) {
             categoryId,
             notifyBefore,
             recurrence,
+            collaboratorEmails,
         } = data;
 
         // 3. VALIDATE REQUIRED FIELDS
@@ -206,6 +207,15 @@ export async function POST(req: Request) {
                 { status: 400 }
             );
         }
+
+        const normalizedTitle = String(title).trim();
+        if (normalizedTitle.length < 3) {
+            return NextResponse.json(
+                { error: "Title must be at least 3 characters" },
+                { status: 400 }
+            );
+        }
+
 
         // 4. VALIDATE DATES
         const start = new Date(startDate);
@@ -223,6 +233,16 @@ export async function POST(req: Request) {
                 { error: "End date must be after start date" },
                 { status: 400 }
             );
+        }
+
+        if (notifyBefore !== undefined) {
+            const notifyValue = Number(notifyBefore);
+            if (Number.isNaN(notifyValue) || notifyValue < 0 || notifyValue > 10080) {
+                return NextResponse.json(
+                    { error: "Notify before must be between 0 and 10080 minutes" },
+                    { status: 400 }
+                );
+            }
         }
 
         // 5. HANDLE RECURRENCE
@@ -243,7 +263,7 @@ export async function POST(req: Request) {
         // 6. CREATE EVENT
         const event = await prisma.event.create({
             data: {
-                title,
+                title: normalizedTitle,
                 description,
                 startDate: start,
                 endDate: end,
@@ -266,6 +286,50 @@ export async function POST(req: Request) {
                 }
             }
         });
+
+        const normalizedCollaboratorEmails = Array.isArray(collaboratorEmails)
+            ? collaboratorEmails
+                .map((email) => String(email).trim().toLowerCase())
+                .filter(Boolean)
+            : [];
+
+        if (normalizedCollaboratorEmails.length > 0) {
+            const uniqueEmails = [...new Set(normalizedCollaboratorEmails)];
+            const collaboratorUsers = await prisma.user.findMany({
+                where: {
+                    email: {
+                        in: uniqueEmails,
+                    },
+                    id: {
+                        not: currentUserId,
+                    },
+                },
+                select: {
+                    id: true,
+                    email: true,
+                },
+            });
+
+            if (collaboratorUsers.length > 0) {
+                await prisma.collaborator.createMany({
+                    data: collaboratorUsers.map((user) => ({
+                        eventId: event.id,
+                        userId: user.id,
+                        role: "editor",
+                    })),
+                    skipDuplicates: true,
+                });
+
+                await prisma.notification.createMany({
+                    data: collaboratorUsers.map((user) => ({
+                        userId: user.id,
+                        eventId: event.id,
+                        type: "COLLABORATOR_ADDED",
+                        message: `You've been added to \"${event.title}\" as collaborator.`,
+                    })),
+                });
+            }
+        }
 
         return NextResponse.json(event, { status: 201 });
 
