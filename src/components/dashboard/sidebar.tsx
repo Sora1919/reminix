@@ -2,14 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { Badge } from "@/components/ui/badge";
 
 import {
   Home,
   Calendar,
   ClipboardList,
   User,
-  LogOut,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -50,20 +49,24 @@ export default function Sidebar() {
         <div className="flex items-center gap-3 px-2">
             <Image
                 src="/logo.svg"
-            alt="Reminix logo"
-            width={60}
-            height={60}
-            priority
+                alt="Reminix logo"
+                width={60}
+                height={60}
+                priority
             />
             <div>
                 <h1 className="text-xl font-bold tracking-tight">Reminix</h1>
                 <p className="text-xs text-muted-foreground">
-                Smart Event Reminder
+                    Smart Event Reminder
                 </p>
             </div>
         </div>
 
-
+        <div className="px-2 pt-4">
+            <Badge variant="secondary" className="text-[11px]">
+                Workspace
+            </Badge>
+        </div>
       {/* Navigation */}
       <nav className="flex-1 space-y-1">
         {navItems.map((item) => {
@@ -91,15 +94,13 @@ export default function Sidebar() {
 
       <Separator className="my-4" />
 
-      {/* Logout */}
-      <Button
-        variant="ghost"
-        className="justify-start gap-3 text-destructive hover:text-destructive"
-        onClick={() => signOut({ callbackUrl: "/login" })}
-      >
-        <LogOut className="h-4 w-4" />
-        Logout
-      </Button>
+        <div className="space-y-2 px-2 text-xs text-muted-foreground">
+            <p>Need to update your account?</p>
+            <Link href="/profile" className="text-primary hover:underline">
+                Go to profile settings
+            </Link>
+        </div>
+
     </aside>
   );
 }

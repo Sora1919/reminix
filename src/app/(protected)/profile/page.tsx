@@ -3,7 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Loader2, User, Camera , Mail } from "lucide-react";
+import { Loader2, User, Camera, LogOut , Mail } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { signOut } from "next-auth/react";
 
 export default function ProfilePage() {
     const { data: session, status, update } = useSession();
@@ -113,9 +114,18 @@ export default function ProfilePage() {
                         <Button variant="outline" onClick={() => router.push("/calendar")}>
                             View Calendar
                         </Button>
+
                         <Button onClick={handleSave} disabled={saving}>
                             {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save Changes
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            onClick={() => signOut({ callbackUrl: "/login" })}
+                            className="gap-2 text-destructive hover:text-destructive"
+                        >
+                            <LogOut className="h-4 w-4" />
+                            Log out
                         </Button>
                     </div>
                 </div>
