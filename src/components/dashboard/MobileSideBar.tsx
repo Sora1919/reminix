@@ -8,7 +8,13 @@ import { signOut } from "next-auth/react";
 import { Home, Calendar, ClipboardList, User, LogOut, Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+    Sheet,
+    SheetContent,
+    SheetTrigger,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import clsx from "clsx";
 
@@ -25,7 +31,12 @@ export default function MobileSidebar() {
     return (
         <Sheet>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="md:hidden"
+                    aria-label="Open menu"
+                >
                     <Menu className="h-6 w-6" />
                 </Button>
             </SheetTrigger>
@@ -34,6 +45,11 @@ export default function MobileSidebar() {
                 side="left"
                 className="w-64 p-4 bg-sidebar text-sidebar-foreground border-r border-sidebar-border"
             >
+                {/* ✅ Required for accessibility (but hidden visually) */}
+                <SheetHeader className="sr-only">
+                    <SheetTitle>Navigation Menu</SheetTitle>
+                </SheetHeader>
+
                 {/* Logo */}
                 <div className="flex items-center gap-3 mb-6">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-accent">
@@ -41,7 +57,9 @@ export default function MobileSidebar() {
                     </div>
                     <div>
                         <div className="text-lg font-bold">Reminix</div>
-                        <div className="text-xs text-sidebar-foreground/70">Smart Event Reminder</div>
+                        <div className="text-xs text-sidebar-foreground/70">
+                            Smart Event Reminder
+                        </div>
                     </div>
                 </div>
 

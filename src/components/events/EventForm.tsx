@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { addDays } from "date-fns";
+import { addDays, format } from "date-fns";
+
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +20,11 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2} from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import EventPreviewCard from "@/components/events/EventPreviewCard";
 
 type Mode = "create" | "edit";
 
@@ -34,9 +36,9 @@ export default function EventForm({
                                       onSuccess,
                                   }: {
     mode: Mode;
-    id?: string; // event id when editing (optional if initialData provided)
-    initialData?: any; // optional pre-fetched event object
-    categories?: { id: number; name: string }[]; // optional categories list
+    id?: string;
+    initialData?: any;
+    categories?: { id: number; name: string }[];
     onSuccess?: (event: any) => void;
 }) {
     const router = useRouter();
@@ -103,7 +105,6 @@ export default function EventForm({
         };
     }, [categories]);
 
-    // combine date & time helper
     function combineDateTime(date: Date | undefined, time: string) {
         if (!date || !time) return null;
         const [hours, minutes] = time.split(":").map(Number);
@@ -115,27 +116,38 @@ export default function EventForm({
         return combined;
     }
 
-    // Load event data when editing (if initialData not provided)
+    function formatDateLabel(d?: Date) {
+        if (!d) return "Pick a date";
+        try {
+            return format(d, "EEE, MMM d yyyy");
+        } catch {
+            return d.toDateString();
+        }
+    }
+
+    // Load event data when editing
     useEffect(() => {
         let mounted = true;
+
         async function load() {
             if (mode !== "edit") return setLoading(false);
+
             if (!id && !initialData) {
                 toast("No event id provided for edit");
                 setLoading(false);
                 return;
             }
+
             if (initialData) {
-                // populate from initialData
                 const e = initialData;
                 if (!mounted) return;
+
                 setTitle(e.title ?? "");
                 setDescription(e.description ?? "");
                 setLocation(e.location ?? "");
                 setStartDate(e.startDate ? new Date(e.startDate) : new Date());
                 setEndDate(e.endDate ? new Date(e.endDate) : addDays(new Date(), 1));
 
-                // set times from startDate/endDate if available
                 if (e.startDate) {
                     const s = new Date(e.startDate);
                     setStartTime(s.toTimeString().slice(0, 5));
@@ -161,7 +173,6 @@ export default function EventForm({
                 return;
             }
 
-            // fetch from API if no initialData
             try {
                 setLoading(true);
                 const res = await fetch(`/api/events/${id}`);
@@ -170,13 +181,16 @@ export default function EventForm({
                     setLoading(false);
                     return;
                 }
+
                 const e = await res.json();
                 if (!mounted) return;
+
                 setTitle(e.title ?? "");
                 setDescription(e.description ?? "");
                 setLocation(e.location ?? "");
                 setStartDate(e.startDate ? new Date(e.startDate) : new Date());
                 setEndDate(e.endDate ? new Date(e.endDate) : addDays(new Date(), 1));
+
                 if (e.startDate) {
                     const s = new Date(e.startDate);
                     setStartTime(s.toTimeString().slice(0, 5));
@@ -185,6 +199,7 @@ export default function EventForm({
                     const en = new Date(e.endDate);
                     setEndTime(en.toTimeString().slice(0, 5));
                 }
+
                 setCategoryId(e.categoryId ?? null);
                 setPriority((e.priority ?? "MEDIUM") as "LOW" | "MEDIUM" | "HIGH");
                 setNotifyBefore(e.notifyBefore ?? 30);
@@ -203,6 +218,7 @@ export default function EventForm({
                 if (mounted) setLoading(false);
             }
         }
+
         load();
         return () => {
             mounted = false;
@@ -221,38 +237,21 @@ export default function EventForm({
         e.preventDefault();
 
         const trimmedTitle = title.trim();
-        if (!trimmedTitle) {
-            toast("Title is required");
-            return;
-        }
-
-        if (trimmedTitle.length < 3) {
-            toast("Title must be at least 3 characters");
-            return;
-        }
-
+        if (!trimmedTitle) return toast("Title is required");
+        if (trimmedTitle.length < 3) return toast("Title must be at least 3 characters");
 
         const finalStart = combineDateTime(startDate, startTime);
         const finalEnd = combineDateTime(endDate, endTime);
 
-        if (!finalStart || !finalEnd) {
-            toast("Start and end date/time are required");
-            return;
-        }
-
-        if (finalStart >= finalEnd) {
-            toast("End date/time must be after start date/time");
-            return;
-        }
+        if (!finalStart || !finalEnd) return toast("Start and end date/time are required");
+        if (finalStart >= finalEnd) return toast("End date/time must be after start date/time");
 
         if (notifyBefore < 0 || notifyBefore > 10080) {
-            toast("Notify before must be between 0 and 10080 minutes (7 days)");
-            return;
+            return toast("Notify before must be between 0 and 10080 minutes (7 days)");
         }
 
         if (recurrenceEnabled && interval < 1) {
-            toast("Recurrence interval must be at least 1");
-            return;
+            return toast("Recurrence interval must be at least 1");
         }
 
         const parsedCollaboratorEmails = collaboratorEmails
@@ -283,8 +282,6 @@ export default function EventForm({
                 : null,
         };
 
-
-        // creatorId for edit fallback only
         if (mode === "edit" && initialData?.creatorId) {
             payload.creatorId = initialData.creatorId;
         }
@@ -300,9 +297,7 @@ export default function EventForm({
             });
 
             if (!res.ok) {
-                const errorPayload = (await res.json().catch(() => null)) as
-                    | { error?: string }
-                    | null;
+                const errorPayload = (await res.json().catch(() => null)) as { error?: string } | null;
                 toast(errorPayload?.error ?? "Failed to save event");
                 setSubmitting(false);
                 return;
@@ -312,7 +307,6 @@ export default function EventForm({
             toast(mode === "create" ? "Event created successfully." : "Event updated successfully.");
 
             if (onSuccess) onSuccess(saved);
-            // redirect to detail page
             router.push(`/events/${saved.id}`);
         } catch (err) {
             console.error(err);
@@ -322,7 +316,6 @@ export default function EventForm({
         }
     }
 
-    // button label
     const submitLabel = mode === "create" ? "Create Event" : "Update Event";
 
     if (loading) {
@@ -333,10 +326,18 @@ export default function EventForm({
         );
     }
 
+    const startDT = combineDateTime(startDate, startTime);
+    const endDT = combineDateTime(endDate, endTime);
+
+    const categoryName =
+        categoryId ? categoryList.find((c) => c.id === categoryId)?.name ?? null : null;
+
     return (
-        <div className="flex gap-6 p-6">
-            {/* LEFT COLUMN — MAIN EVENT INFO */}
-            <div className="w-2/3 space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Back Button */}
+
+            {/* LEFT: MAIN FORM */}
+            <div className="lg:col-span-8 space-y-6">
                 <Card>
                     <CardHeader>
                         <CardTitle>{mode === "create" ? "Create New Event" : "Edit Event"}</CardTitle>
@@ -345,9 +346,10 @@ export default function EventForm({
                     <CardContent>
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Title */}
-                            <div>
-                                <Label>Title</Label>
+                            <div className="space-y-2">
+                                <Label htmlFor="title">Title</Label>
                                 <Input
+                                    id="title"
                                     name="title"
                                     required
                                     placeholder="Event title..."
@@ -357,9 +359,10 @@ export default function EventForm({
                             </div>
 
                             {/* Description */}
-                            <div>
-                                <Label>Description</Label>
+                            <div className="space-y-2">
+                                <Label htmlFor="description">Description</Label>
                                 <Textarea
+                                    id="description"
                                     name="description"
                                     placeholder="Event description..."
                                     value={description}
@@ -368,9 +371,10 @@ export default function EventForm({
                             </div>
 
                             {/* Location */}
-                            <div>
-                                <Label>Location</Label>
+                            <div className="space-y-2">
+                                <Label htmlFor="location">Location</Label>
                                 <Input
+                                    id="location"
                                     name="location"
                                     placeholder="Optional location..."
                                     value={location}
@@ -378,78 +382,106 @@ export default function EventForm({
                                 />
                             </div>
 
+                            {/* Collaborators */}
                             {mode === "create" && (
-                                <div>
-                                    <Label>Invite collaborators (optional)</Label>
+                                <div className="space-y-2">
+                                    <Label htmlFor="collab">Invite collaborators (optional)</Label>
                                     <Input
+                                        id="collab"
                                         placeholder="alice@mail.com, bob@mail.com"
                                         value={collaboratorEmails}
                                         onChange={(e) => setCollaboratorEmails(e.target.value)}
                                     />
-                                    <p className="mt-1 text-xs text-muted-foreground">
+                                    <p className="text-xs text-muted-foreground">
                                         Separate multiple emails with commas.
                                     </p>
                                 </div>
                             )}
 
-
-                            {/* Date Pickers */}
-                            <div className="grid grid-cols-2 gap-4">
-                                {/* Start Date */}
-                                <div>
+                            {/* Dates */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
                                     <Label>Start Date</Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start">
+                                            <Button variant="outline" className="w-full justify-start text-left font-normal">
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {startDate?.toDateString()}
+                                                <span className="truncate">{formatDateLabel(startDate)}</span>
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent>
-                                            <Calendar mode="single" selected={startDate} onSelect={setStartDate} />
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={startDate}
+                                                onSelect={setStartDate}
+                                                initialFocus
+                                            />
                                         </PopoverContent>
                                     </Popover>
                                 </div>
 
-                                {/* End Date */}
-                                <div>
+                                <div className="space-y-2">
                                     <Label>End Date</Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                            <Button variant="outline" className="w-full justify-start">
+                                            <Button variant="outline" className="w-full justify-start text-left font-normal">
                                                 <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {endDate?.toDateString()}
+                                                <span className="truncate">{formatDateLabel(endDate)}</span>
                                             </Button>
                                         </PopoverTrigger>
-                                        <PopoverContent>
-                                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} />
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                mode="single"
+                                                selected={endDate}
+                                                onSelect={setEndDate}
+                                                initialFocus
+                                            />
                                         </PopoverContent>
                                     </Popover>
                                 </div>
+                            </div>
 
-                                {/* TIME PICKERS */}
-                                <div className="grid grid-cols-2 gap-4 mt-4">
-                                    <div>
-                                        <Label>Start Time</Label>
-                                        <Input
-                                            type="time"
-                                            value={startTime}
-                                            onChange={(e) => setStartTime(e.target.value)}
-                                            required
-                                        />
-                                    </div>
+                            {/* Times */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="startTime">Start Time</Label>
+                                    <Input
+                                        id="startTime"
+                                        type="time"
+                                        value={startTime}
+                                        onChange={(e) => setStartTime(e.target.value)}
+                                        required
+                                    />
+                                </div>
 
-                                    <div>
-                                        <Label>End Time</Label>
-                                        <Input
-                                            type="time"
-                                            value={endTime}
-                                            onChange={(e) => setEndTime(e.target.value)}
-                                            required
-                                        />
-                                    </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="endTime">End Time</Label>
+                                    <Input
+                                        id="endTime"
+                                        type="time"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                        required
+                                    />
                                 </div>
                             </div>
+
+                            <EventPreviewCard
+                                className="lg:hidden"
+                                title={title}
+                                description={description}
+                                location={location}
+                                categoryName={categoryName}
+                                priority={priority}
+                                startDT={startDT}
+                                endDT={endDT}
+                                notifyBefore={notifyBefore}
+                                recurrenceEnabled={recurrenceEnabled}
+                                frequency={frequency}
+                                interval={interval}
+                                collaboratorEmails={collaboratorEmails}
+                                showCollaborators={mode === "create"}
+                            />
 
                             {/* Submit */}
                             <Button type="submit" className="w-full" disabled={submitting}>
@@ -460,112 +492,132 @@ export default function EventForm({
                 </Card>
             </div>
 
-            {/* RIGHT COLUMN — SETTINGS */}
-            <div className="w-1/3 space-y-6">
-                {/* CATEGORY + PRIORITY */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Event Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {/* Category */}
-                        <div>
-                            <Label>Category</Label>
-                            <Select value={categoryId ? String(categoryId) : ""} onValueChange={(v) => setCategoryId(Number(v))}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {categoryList.map((c) => (
-                                        <SelectItem key={c.id} value={String(c.id)}>
-                                            {c.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-
-                        <div>
-                            <Label>Priority</Label>
-                            <RadioGroup value={priority} onValueChange={(v) => setPriority(v as any)}>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="LOW" id="low" />
-                                    <Label htmlFor="low">Low</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="MEDIUM" id="medium" />
-                                    <Label htmlFor="medium">Medium</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="HIGH" id="high" />
-                                    <Label htmlFor="high">High</Label>
-                                </div>
-                            </RadioGroup>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* NOTIFICATIONS */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Notifications</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Label>Notify Before (minutes)</Label>
-                        <Input
-                            type="number"
-                            value={notifyBefore}
-                            onChange={(e) => setNotifyBefore(Number(e.target.value))}
-                            min={0}
-                        />
-                    </CardContent>
-                </Card>
-
-                {/* RECURRENCE */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Recurrence</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {/* Toggle */}
-                        <div className="flex items-center justify-between">
-                            <Label>Enable recurrence</Label>
-                            <Switch checked={recurrenceEnabled} onCheckedChange={setRecurrenceEnabled} />
-                        </div>
-
-                        {recurrenceEnabled && (
-                            <div className="space-y-4">
-                                {/* Frequency */}
-                                <div>
-                                    <Label>Frequency</Label>
-                                    <Select value={frequency} onValueChange={(v) => setFrequency(v as any)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select frequency" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="DAILY">Daily</SelectItem>
-                                            <SelectItem value="WEEKLY">Weekly</SelectItem>
-                                            <SelectItem value="MONTHLY">Monthly</SelectItem>
-                                            <SelectItem value="YEARLY">Yearly</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {/* Interval */}
-                                <div>
-                                    <Label>Repeat every</Label>
-                                    <Input
-                                        type="number"
-                                        value={interval}
-                                        onChange={(e) => setInterval(Number(e.target.value))}
-                                        min={1}
-                                    />
-                                </div>
+            {/* RIGHT: SETTINGS */}
+            <div className="lg:col-span-4">
+                <div className="space-y-6 lg:sticky lg:top-20">
+                    <EventPreviewCard
+                        className="hidden lg:block"
+                        title={title}
+                        description={description}
+                        location={location}
+                        categoryName={categoryName}
+                        priority={priority}
+                        startDT={startDT}
+                        endDT={endDT}
+                        notifyBefore={notifyBefore}
+                        recurrenceEnabled={recurrenceEnabled}
+                        frequency={frequency}
+                        interval={interval}
+                        collaboratorEmails={collaboratorEmails}
+                        showCollaborators={mode === "create"}
+                    />
+                    {/* Category + Priority */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Event Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Category</Label>
+                                <Select
+                                    value={categoryId ? String(categoryId) : "none"}
+                                    onValueChange={(v) => setCategoryId(v === "none" ? null : Number(v))}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">No category</SelectItem>
+                                        {categoryList.map((c) => (
+                                            <SelectItem key={c.id} value={String(c.id)}>
+                                                {c.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+
+                            <div className="space-y-2">
+                                <Label>Priority</Label>
+                                <RadioGroup value={priority} onValueChange={(v) => setPriority(v as any)} className="space-y-2">
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="LOW" id="low" />
+                                        <Label htmlFor="low">Low</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="MEDIUM" id="medium" />
+                                        <Label htmlFor="medium">Medium</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="HIGH" id="high" />
+                                        <Label htmlFor="high">High</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Notifications */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Notifications</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                            <Label htmlFor="notifyBefore">Notify Before (minutes)</Label>
+                            <Input
+                                id="notifyBefore"
+                                type="number"
+                                value={notifyBefore}
+                                onChange={(e) => setNotifyBefore(Number(e.target.value))}
+                                min={0}
+                                max={10080}
+                            />
+                            <p className="text-xs text-muted-foreground">0–10080 minutes (up to 7 days)</p>
+                        </CardContent>
+                    </Card>
+
+                    {/* Recurrence */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Recurrence</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <Label>Enable recurrence</Label>
+                                <Switch checked={recurrenceEnabled} onCheckedChange={setRecurrenceEnabled} />
+                            </div>
+
+                            {recurrenceEnabled && (
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label>Frequency</Label>
+                                        <Select value={frequency} onValueChange={(v) => setFrequency(v as any)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select frequency" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="DAILY">Daily</SelectItem>
+                                                <SelectItem value="WEEKLY">Weekly</SelectItem>
+                                                <SelectItem value="MONTHLY">Monthly</SelectItem>
+                                                <SelectItem value="YEARLY">Yearly</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Repeat every</Label>
+                                        <Input
+                                            type="number"
+                                            value={interval}
+                                            onChange={(e) => setInterval(Number(e.target.value))}
+                                            min={1}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     );

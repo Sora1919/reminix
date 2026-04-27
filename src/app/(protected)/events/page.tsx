@@ -1,9 +1,13 @@
-// app/events/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Plus } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+
 import EventList from "@/components/events/EventList";
 import EventFilters from "@/components/events/EventFilters";
 
@@ -14,15 +18,40 @@ interface Event {
     startDate: string;
     endDate: string;
     priority: "LOW" | "MEDIUM" | "HIGH";
-    category?: {
-        id: number;
-        name: string;
-    };
+    location?: string;
+    category?: { id: number; name: string };
 }
 
 interface Category {
     id: number;
     name: string;
+}
+
+function EventsSkeleton() {
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+                <Card key={i} className="py-4">
+                    <CardContent className="space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 space-y-2">
+                                <Skeleton className="h-5 w-3/4" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-2/3" />
+                            </div>
+                            <Skeleton className="h-5 w-14 rounded-full" />
+                        </div>
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <div className="flex justify-between pt-1">
+                            <Skeleton className="h-5 w-20 rounded-full" />
+                            <Skeleton className="h-4 w-10" />
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    );
 }
 
 export default function EventsPage() {
@@ -39,10 +68,7 @@ export default function EventsPage() {
         async function fetchCategories() {
             try {
                 const res = await fetch("/api/categories");
-                if (res.ok) {
-                    const data = await res.json();
-                    setCategories(data);
-                }
+                if (res.ok) setCategories(await res.json());
             } catch (error) {
                 console.error("Failed to fetch categories:", error);
             }
@@ -50,25 +76,17 @@ export default function EventsPage() {
         fetchCategories();
     }, []);
 
-    // Fetch events
+    // Fetch events (server-side filters + debounce)
     useEffect(() => {
         async function fetchEvents() {
             setLoading(true);
             try {
                 const params = new URLSearchParams();
 
-                // Only add filters if not "all"
-                if (categoryFilter && categoryFilter !== "all") {
-                    params.set("categoryId", categoryFilter);
-                }
-                if (priorityFilter && priorityFilter !== "all") {
-                    params.set("priority", priorityFilter);
-                }
-                if (searchText) {
-                    params.set("search", searchText);
-                }
+                if (categoryFilter !== "all") params.set("categoryId", categoryFilter);
+                if (priorityFilter !== "all") params.set("priority", priorityFilter);
+                if (searchText) params.set("search", searchText);
 
-                // Always include relations
                 params.set("include", "true");
 
                 const res = await fetch(`/api/events?${params.toString()}`);
@@ -84,27 +102,9 @@ export default function EventsPage() {
             }
         }
 
-        const debounceTimer = setTimeout(() => {
-            fetchEvents();
-        }, 300); // Debounce search
-
-        return () => clearTimeout(debounceTimer);
+        const t = setTimeout(fetchEvents, 300);
+        return () => clearTimeout(t);
     }, [categoryFilter, priorityFilter, searchText]);
-
-    // Apply local filters (if you want additional client-side filtering)
-    useEffect(() => {
-        let result = [...events];
-
-        if (searchText) {
-            const query = searchText.toLowerCase();
-            result = result.filter(event =>
-                event.title.toLowerCase().includes(query) ||
-                (event.description && event.description.toLowerCase().includes(query))
-            );
-        }
-
-        setFilteredEvents(result);
-    }, [events, searchText]);
 
     function clearFilters() {
         setCategoryFilter("all");
@@ -113,27 +113,28 @@ export default function EventsPage() {
     }
 
     return (
-        <div className="container mx-auto p-4 md:p-8 text-foreground">
+        <div className="mx-auto w-full max-w-6xl p-4 md:p-8">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-muted-foreground">
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
                         Your Events
                     </h1>
-                    <p className="text-muted-foreground mt-2">
+                    <p className="mt-1 text-muted-foreground">
                         Manage and organize all your upcoming events
                     </p>
                 </div>
-                <Link
-                    href="/events/create"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-3 rounded-lg font-medium transition-colors"
-                >
-                    + Create New Event
-                </Link>
+
+                <Button asChild className="gap-2 self-start md:self-auto">
+                    <Link href="/events/create">
+                        <Plus className="h-4 w-4" />
+                        Create Event
+                    </Link>
+                </Button>
             </div>
 
-            {/* Filters Card */}
-            <Card className="mb-8">
+            {/* Filters */}
+            <Card className="mt-6 py-0">
                 <CardContent className="p-0">
                     <EventFilters
                         categories={categories}
@@ -148,45 +149,42 @@ export default function EventsPage() {
                 </CardContent>
             </Card>
 
-            {/* Results Summary */}
-            <div className="mb-6 flex justify-between items-center">
-                <p className="text-muted-foreground">
-                    Showing <span className="font-semibold">{filteredEvents.length}</span> events
+            {/* Summary */}
+            <div className="mt-6 flex items-center justify-between gap-3">
+                <p className="text-sm text-muted-foreground">
+                    Showing{" "}
+                    <span className="font-medium text-foreground">
+            {filteredEvents.length}
+          </span>{" "}
+                    events
                 </p>
-                {loading && (
-                    <p className="text-primary animate-pulse">Loading events...</p>
-                )}
+                {loading ? (
+                    <p className="text-sm text-muted-foreground">Updating…</p>
+                ) : null}
             </div>
 
-            {/* Events List */}
-            {loading ? (
-                <div className="text-center py-12">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <p className="mt-2 text-muted-foreground">Loading events...</p>
-                </div>
-            ) : (
-                <EventList events={filteredEvents} />
-            )}
-
-            {/* Empty State */}
-            {!loading && filteredEvents.length === 0 && (
-                <div className="text-center py-12 border-2 border-dashed border-muted rounded-lg">
-                    <p className="text-muted-foreground text-lg">No events found</p>
-                    <p className="text-muted-foreground mt-2">
-                        {events.length === 0
-                            ? "Create your first event to get started!"
-                            : "Try adjusting your filters"}
-                    </p>
-                    {events.length === 0 && (
-                        <Link
-                            href="/events/create"
-                            className="inline-block mt-4 bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2 rounded-lg"
-                        >
-                            Create Your First Event
-                        </Link>
-                    )}
-                </div>
-            )}
+            {/* List / Empty */}
+            <div className="mt-4">
+                {loading ? (
+                    <EventsSkeleton />
+                ) : filteredEvents.length > 0 ? (
+                    <EventList events={filteredEvents} />
+                ) : (
+                    <div className="mt-6 rounded-xl border border-dashed p-10 text-center">
+                        <p className="text-lg font-semibold">No events found</p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            {events.length === 0
+                                ? "Create your first event to get started."
+                                : "Try adjusting your filters."}
+                        </p>
+                        {events.length === 0 ? (
+                            <Button asChild className="mt-4">
+                                <Link href="/events/create">Create Your First Event</Link>
+                            </Button>
+                        ) : null}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

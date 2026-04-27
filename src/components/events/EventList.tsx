@@ -1,4 +1,3 @@
-// components/events/EventList.tsx
 "use client";
 
 import EventCard from "./EventCard";
@@ -10,11 +9,8 @@ interface Event {
     startDate: string;
     endDate: string;
     priority: "LOW" | "MEDIUM" | "HIGH";
-    category?: {
-        id: number;
-        name: string;
-    };
-    // Add other properties as needed
+    category?: { id: number; name: string };
+    location?: string;
 }
 
 interface EventListProps {
@@ -22,13 +18,9 @@ interface EventListProps {
 }
 
 export default function EventList({ events }: EventListProps) {
-    if (!events.length) {
-        return <p className="text-gray-500 text-center py-8">No events found. Create one!</p>;
-    }
-
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map(event => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+            {events.map((event) => (
                 <EventCard key={event.id} event={event} />
             ))}
         </div>

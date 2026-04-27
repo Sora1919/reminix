@@ -3,16 +3,16 @@ import prisma from "@/lib/prisma";
 
 export default async function EventCreatePage() {
     const categories = await prisma.category.findMany({
-        select: {
-            id: true,
-            name: true,
-        },
+        select: { id: true, name: true },
         orderBy: { name: "asc" },
     });
 
     return (
-        <div className="p-8 max-w-3xl mx-auto">
-            <h1 className="text-3xl font-bold mb-6">Create Event</h1>
+        <div className="mx-auto w-full max-w-6xl p-4 md:p-8">
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-6">
+                Create Event
+            </h1>
+
             <EventForm mode="create" categories={categories} />
         </div>
     );

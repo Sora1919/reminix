@@ -1,6 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { format } from "date-fns";
+import { CalendarDays, MapPin, ChevronRight } from "lucide-react";
+
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface EventCardProps {
     event: {
@@ -18,74 +24,91 @@ interface EventCardProps {
     };
 }
 
+function safeFormat(dateString: string) {
+    try {
+        return format(new Date(dateString), "MMM d, yyyy • h:mm a");
+    } catch {
+        return dateString;
+    }
+}
+
+function priorityClass(priority: EventCardProps["event"]["priority"]) {
+    switch (priority) {
+        case "HIGH":
+            return "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400";
+        case "MEDIUM":
+            return "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-400";
+        case "LOW":
+            return "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400";
+        default:
+            return "";
+    }
+}
+
 export default function EventCard({ event }: EventCardProps) {
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
-    const getPriorityColor = (priority: string) => {
-        switch (priority) {
-            case "HIGH":
-                return "bg-red-100 text-red-600";
-            case "MEDIUM":
-                return "bg-yellow-100 text-yellow-700";
-            case "LOW":
-                return "bg-green-100 text-green-700";
-            default:
-                return "bg-gray-100 text-gray-700";
-        }
-    };
-
     return (
-        <Link
-            href={`/events/${event.id}`}
-            className="block border p-6 rounded-lg shadow hover:shadow-lg transition-all duration-200 hover:scale-[1.02] bg-white"
-        >
-            <div className="flex justify-between items-start mb-2">
-                <h2 className="text-xl font-semibold text-gray-800 line-clamp-1">
-                    {event.title}
-                </h2>
-                <span className={`px-2 py-1 text-xs rounded font-medium ${getPriorityColor(event.priority)}`}>
-                    {event.priority}
-                </span>
-            </div>
+        <Link href={`/events/${event.id}`} className="group block">
+            <Card className="py-4 transition-all hover:shadow-md hover:border-primary/30">
+                <CardContent className="space-y-3">
+                    {/* Title + Priority */}
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <h3 className="truncate text-base font-semibold">{event.title}</h3>
+                            {event.description ? (
+                                <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
+                                    {event.description}
+                                </p>
+                            ) : (
+                                <p className="mt-1 text-sm text-muted-foreground">No description</p>
+                            )}
+                        </div>
 
-            {event.description && (
-                <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                    {event.description}
-                </p>
-            )}
+                        <Badge
+                            variant="outline"
+                            className={cn("uppercase", priorityClass(event.priority))}
+                        >
+                            {event.priority}
+                        </Badge>
+                    </div>
 
-            <div className="text-sm text-gray-500 space-y-1">
-                <div className="flex items-center gap-1">
-                    <span className="font-medium">Start:</span>
-                    <span>{formatDate(event.startDate)}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <span className="font-medium">End:</span>
-                    <span>{formatDate(event.endDate)}</span>
-                </div>
-            </div>
+                    {/* Meta */}
+                    <div className="grid gap-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <CalendarDays className="h-4 w-4" />
+                            <span className="line-clamp-1">
+                {safeFormat(event.startDate)} — {safeFormat(event.endDate)}
+              </span>
+                        </div>
 
-            {event.location && (
-                <p className="text-sm text-gray-500 mt-3 flex items-center gap-1">
-                    📍 {event.location}
-                </p>
-            )}
+                        {event.location ? (
+                            <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4" />
+                                <span className="line-clamp-1">{event.location}</span>
+                            </div>
+                        ) : null}
+                    </div>
 
-            {event.category && (
-                <div className="mt-3">
-                    <span className="inline-block px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
-                        {event.category.name}
-                    </span>
-                </div>
-            )}
+                    {/* Tags + Action */}
+                    <div className="flex items-center justify-between pt-1">
+                        <div className="flex flex-wrap gap-2">
+                            {event.category ? (
+                                <Badge variant="secondary" className="bg-primary/10 text-primary">
+                                    {event.category.name}
+                                </Badge>
+                            ) : (
+                                <Badge variant="secondary" className="text-muted-foreground">
+                                    No category
+                                </Badge>
+                            )}
+                        </div>
+
+                        <div className="flex items-center gap-1 text-sm text-muted-foreground group-hover:text-foreground">
+                            <span className="hidden sm:inline">View</span>
+                            <ChevronRight className="h-4 w-4" />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
         </Link>
     );
 }
