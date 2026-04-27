@@ -241,11 +241,17 @@ export default function ChatRoom() {
     const loadMessages = async () => {
         try {
             const res = await fetch(`/api/events/${eventId}/chat/messages`);
-            if (!res.ok) throw new Error("Failed to load");
-            const json = await res.json();
 
+            // ✅ treat "chat room not created yet" as empty
+            if (res.status === 404) {
+                setMessages([]);
+                return;
+            }
+
+            if (!res.ok) throw new Error("Failed to load");
+
+            const json = await res.json();
             if (json?.success && Array.isArray(json.data)) {
-                // Your API returns newest-first, so reverse to show oldest-first
                 setMessages(json.data.reverse());
             } else {
                 setMessages([]);

@@ -112,7 +112,7 @@ export default async function DashboardPage() {
     }));
 
     return (
-        <div className="space-y-6">
+        <div className="mx-auto w-full max-w-6xl space-y-6">
             {/* Top row: stats + quick actions */}
             <div className="flex flex-col lg:flex-row gap-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
@@ -14,12 +14,12 @@ import EventFilters from "@/components/events/EventFilters";
 interface Event {
     id: number;
     title: string;
-    description?: string;
+    description?: string | null;
     startDate: string;
     endDate: string;
     priority: "LOW" | "MEDIUM" | "HIGH";
-    location?: string;
-    category?: { id: number; name: string };
+    location?: string | null;
+    category?: { id: number; name: string } | null;
 }
 
 interface Category {
@@ -56,14 +56,13 @@ function EventsSkeleton() {
 
 export default function EventsPage() {
     const [events, setEvents] = useState<Event[]>([]);
-    const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [categoryFilter, setCategoryFilter] = useState("all");
     const [priorityFilter, setPriorityFilter] = useState("all");
     const [searchText, setSearchText] = useState("");
     const [loading, setLoading] = useState(true);
 
-    // Fetch categories
+    // ✅ Fetch categories
     useEffect(() => {
         async function fetchCategories() {
             try {
@@ -76,7 +75,7 @@ export default function EventsPage() {
         fetchCategories();
     }, []);
 
-    // Fetch events (server-side filters + debounce)
+    // ✅ Fetch events only when CATEGORY or PRIORITY changes
     useEffect(() => {
         async function fetchEvents() {
             setLoading(true);
@@ -85,7 +84,6 @@ export default function EventsPage() {
 
                 if (categoryFilter !== "all") params.set("categoryId", categoryFilter);
                 if (priorityFilter !== "all") params.set("priority", priorityFilter);
-                if (searchText) params.set("search", searchText);
 
                 params.set("include", "true");
 
@@ -93,7 +91,6 @@ export default function EventsPage() {
                 if (res.ok) {
                     const data = await res.json();
                     setEvents(data);
-                    setFilteredEvents(data);
                 }
             } catch (error) {
                 console.error("Failed to fetch events:", error);
@@ -102,9 +99,20 @@ export default function EventsPage() {
             }
         }
 
-        const t = setTimeout(fetchEvents, 300);
-        return () => clearTimeout(t);
-    }, [categoryFilter, priorityFilter, searchText]);
+        fetchEvents();
+    }, [categoryFilter, priorityFilter]);
+
+    // ✅ Client-side search filter (always works)
+    const filteredEvents = useMemo(() => {
+        const q = searchText.trim().toLowerCase();
+        if (!q) return events;
+
+        return events.filter((e) => {
+            const title = (e.title || "").toLowerCase();
+            const desc = (e.description || "").toLowerCase();
+            return title.includes(q) || desc.includes(q);
+        });
+    }, [events, searchText]);
 
     function clearFilters() {
         setCategoryFilter("all");
@@ -117,9 +125,7 @@ export default function EventsPage() {
             {/* Header */}
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-                        Your Events
-                    </h1>
+                    <h1 className="text-3xl md:text-4xl font-bold tracking-tight">Your Events</h1>
                     <p className="mt-1 text-muted-foreground">
                         Manage and organize all your upcoming events
                     </p>
@@ -152,15 +158,8 @@ export default function EventsPage() {
             {/* Summary */}
             <div className="mt-6 flex items-center justify-between gap-3">
                 <p className="text-sm text-muted-foreground">
-                    Showing{" "}
-                    <span className="font-medium text-foreground">
-            {filteredEvents.length}
-          </span>{" "}
-                    events
+                    Showing <span className="font-medium text-foreground">{filteredEvents.length}</span> events
                 </p>
-                {loading ? (
-                    <p className="text-sm text-muted-foreground">Updating…</p>
-                ) : null}
             </div>
 
             {/* List / Empty */}
@@ -173,9 +172,7 @@ export default function EventsPage() {
                     <div className="mt-6 rounded-xl border border-dashed p-10 text-center">
                         <p className="text-lg font-semibold">No events found</p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            {events.length === 0
-                                ? "Create your first event to get started."
-                                : "Try adjusting your filters."}
+                            {events.length === 0 ? "Create your first event to get started." : "Try a different search."}
                         </p>
                         {events.length === 0 ? (
                             <Button asChild className="mt-4">

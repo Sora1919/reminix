@@ -1,26 +1,45 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Plus, Tag, CalendarPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { CalendarPlus, ListChecks, Plus } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function QuickActions() {
     const router = useRouter();
 
     return (
-        <div className="bg-background p-4 rounded-lg border shadow-sm">
-            <h3 className="font-semibold mb-3">Quick Actions</h3>
-            <div className="space-y-2">
+        <Card className="h-full">
+            <CardHeader className="pb-3">
+                <CardTitle className="text-base">Quick Actions</CardTitle>
+            </CardHeader>
+
+            <CardContent className="space-y-2">
                 <Button className="w-full" onClick={() => router.push("/events/create")}>
-                    <Plus size={16} className="mr-2" /> Create Event
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Event
                 </Button>
-                <Button variant="ghost" className="w-full" onClick={() => router.push("/dashboard/categories")}>
-                    <Tag size={16} className="mr-2" /> Create Category
+
+                {/* ✅ Replace Create Category with View Events */}
+                <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => router.push("/events")}
+                >
+                    <ListChecks className="mr-2 h-4 w-4" />
+                    View Events
                 </Button>
-                <Button variant="outline" className="w-full" onClick={() => router.push("/calendar")}>
-                    <CalendarPlus size={16} className="mr-2" /> Open Calendar
+
+                <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => router.push("/calendar")}
+                >
+                    <CalendarPlus className="mr-2 h-4 w-4" />
+                    Open Calendar
                 </Button>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 }

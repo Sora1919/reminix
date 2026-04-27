@@ -1,20 +1,9 @@
 "use client";
 
-import EventCard from "./EventCard";
-
-interface Event {
-    id: number;
-    title: string;
-    description?: string;
-    startDate: string;
-    endDate: string;
-    priority: "LOW" | "MEDIUM" | "HIGH";
-    category?: { id: number; name: string };
-    location?: string;
-}
+import EventCard, { type EventItem } from "./EventCard";
 
 interface EventListProps {
-    events: Event[];
+    events: EventItem[];
 }
 
 export default function EventList({ events }: EventListProps) {

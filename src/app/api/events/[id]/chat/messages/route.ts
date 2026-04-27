@@ -47,16 +47,17 @@ export async function GET(
             );
         }
 
-        // Get chat room
+        // Get chat room (if not exist yet, just return empty messages)
         const chatRoom = await prisma.chatRoom.findUnique({
             where: { eventId },
         });
 
         if (!chatRoom) {
-            return NextResponse.json(
-                { error: "Chat room not found" },
-                { status: 404 }
-            );
+            return NextResponse.json({
+                success: true,
+                data: [],
+                pagination: { nextCursor: null, hasMore: false, total: 0 },
+            });
         }
 
         // Build query for pagination
@@ -184,15 +185,8 @@ export async function POST(
             },
         });
 
-        // Create chat room if it doesn't exist
+        // Create chat room if it doesn't exist (allow creator OR collaborators)
         if (!chatRoom) {
-            if (event.creatorId !== currentUserId) {
-                return NextResponse.json(
-                    { error: "Chat room not found" },
-                    { status: 404 }
-                );
-            }
-
             chatRoom = await prisma.chatRoom.create({
                 data: {
                     eventId,
@@ -201,13 +195,14 @@ export async function POST(
                     participants: {
                         create: [
                             { userId: event.creatorId, role: "admin" },
-                            ...event.collaborators.map(c => ({ userId: c.userId, role: "member" })),
+                            ...event.collaborators.map((c) => ({
+                                userId: c.userId,
+                                role: "member",
+                            })),
                         ],
                     },
                 },
-                include: {
-                    participants: true,
-                },
+                include: { participants: true },
             });
         }
 

@@ -8,20 +8,21 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
+export type EventPriority = "LOW" | "MEDIUM" | "HIGH";
+
+export type EventItem = {
+    id: number;
+    title: string;
+    description?: string | null;
+    startDate: string;
+    endDate: string;
+    priority: EventPriority;
+    category?: { id: number; name: string } | null;
+    location?: string | null;
+};
+
 interface EventCardProps {
-    event: {
-        id: number;
-        title: string;
-        description?: string;
-        startDate: string;
-        endDate: string;
-        priority: "LOW" | "MEDIUM" | "HIGH";
-        category?: {
-            id: number;
-            name: string;
-        };
-        location?: string;
-    };
+    event: EventItem;
 }
 
 function safeFormat(dateString: string) {
@@ -32,7 +33,7 @@ function safeFormat(dateString: string) {
     }
 }
 
-function priorityClass(priority: EventCardProps["event"]["priority"]) {
+function priorityClass(priority: EventPriority) {
     switch (priority) {
         case "HIGH":
             return "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400";
@@ -54,6 +55,7 @@ export default function EventCard({ event }: EventCardProps) {
                     <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                             <h3 className="truncate text-base font-semibold">{event.title}</h3>
+
                             {event.description ? (
                                 <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                                     {event.description}

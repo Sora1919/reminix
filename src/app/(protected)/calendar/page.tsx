@@ -66,7 +66,7 @@ export default function CalendarPage() {
                         </ul>
                     </div>
 
-                    <div className="rounded-2xl border bg-foreground p-4 text-sm text-background shadow-sm">
+                    <div className="rounded-2xl border border-primary/15 bg-primary/10 p-4 text-sm text-foreground shadow-sm">
                         <p className="font-semibold">Pro tip</p>
                         <p className="mt-2 text-background/80">
                             Use recurring events for habits and routines so you never

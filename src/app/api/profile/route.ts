@@ -9,25 +9,63 @@ type ProfilePayload = {
     image?: string | null;
 };
 
-function isValidUrl(value: string) {
+function isValidImageRef(value: string) {
+    const v = value.trim();
+
+    // ✅ Allow images you uploaded to your app (stored in /public/uploads)
+    if (v.startsWith("/uploads/")) return true;
+
+    // ✅ Allow normal online URLs
     try {
-        const url = new URL(value);
+        const url = new URL(v);
         return url.protocol === "http:" || url.protocol === "https:";
     } catch {
         return false;
     }
 }
 
-export async function PATCH(req: Request) {
+async function getAuthedUserId() {
     const session = await getServerSession(authOptions);
+    const id = session?.user?.id;
 
-    if (!session?.user?.id) {
+    if (!id) return null;
+    return Number(id);
+}
+
+// ✅ GET /api/profile  (for loading profile)
+export async function GET() {
+    const userId = await getAuthedUserId();
+    if (!userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { name: true, email: true, image: true },
+    });
+
+    if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // return flat shape (what your Profile page expects)
+    return NextResponse.json({
+        name: user.name,
+        email: user.email,
+        image: user.image,
+    });
+}
+
+async function updateProfile(req: Request) {
+    const userId = await getAuthedUserId();
+    if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const payload = (await req.json()) as ProfilePayload;
     const updates: { name?: string; image?: string | null } = {};
 
+    // name
     if (typeof payload.name === "string") {
         const normalizedName = normalizeName(payload.name);
         if (normalizedName.length < 2 || normalizedName.length > 50) {
@@ -39,17 +77,20 @@ export async function PATCH(req: Request) {
         updates.name = normalizedName;
     }
 
-    if (typeof payload.image === "string") {
-        const trimmedImage = payload.image.trim();
-        if (trimmedImage.length === 0) {
+    // image
+    if (payload.image === null) {
+        updates.image = null;
+    } else if (typeof payload.image === "string") {
+        const trimmed = payload.image.trim();
+        if (trimmed.length === 0) {
             updates.image = null;
-        } else if (!isValidUrl(trimmedImage)) {
+        } else if (!isValidImageRef(trimmed)) {
             return NextResponse.json(
-                { error: "Image must be a valid URL" },
+                { error: "Image must be a valid URL or an uploaded /uploads/... path" },
                 { status: 400 }
             );
         } else {
-            updates.image = trimmedImage;
+            updates.image = trimmed;
         }
     }
 
@@ -61,15 +102,24 @@ export async function PATCH(req: Request) {
     }
 
     const user = await prisma.user.update({
-        where: { id: Number(session.user.id) },
+        where: { id: userId },
         data: updates,
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            image: true,
-        },
+        select: { name: true, email: true, image: true },
     });
 
-    return NextResponse.json({ user });
+    return NextResponse.json({
+        name: user.name,
+        email: user.email,
+        image: user.image,
+    });
+}
+
+// ✅ PUT /api/profile (your Profile page uses PUT)
+export async function PUT(req: Request) {
+    return updateProfile(req);
+}
+
+// ✅ keep PATCH also (in case you call PATCH elsewhere)
+export async function PATCH(req: Request) {
+    return updateProfile(req);
 }
