@@ -5,21 +5,10 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 
-import {
-    Home,
-    Calendar,
-    ClipboardList,
-    User,
-    LogOut,
-    Menu,
-} from "lucide-react";
+import { Home, Calendar, ClipboardList, User, LogOut, Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-    Sheet,
-    SheetContent,
-    SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import clsx from "clsx";
 
@@ -41,11 +30,19 @@ export default function MobileSidebar() {
                 </Button>
             </SheetTrigger>
 
-            <SheetContent side="left" className="w-64 p-4">
+            <SheetContent
+                side="left"
+                className="w-64 p-4 bg-sidebar text-sidebar-foreground border-r border-sidebar-border"
+            >
                 {/* Logo */}
                 <div className="flex items-center gap-3 mb-6">
-                    <Image src="/logo.png" alt="Reminix" width={36} height={36} />
-                    <span className="text-lg font-bold">Reminix</span>
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sidebar-accent">
+                        <Image src="/logo.svg" alt="Reminix" width={22} height={22} />
+                    </div>
+                    <div>
+                        <div className="text-lg font-bold">Reminix</div>
+                        <div className="text-xs text-sidebar-foreground/70">Smart Event Reminder</div>
+                    </div>
                 </div>
 
                 <nav className="space-y-1">
@@ -57,8 +54,11 @@ export default function MobileSidebar() {
                             <Button
                                 key={item.href}
                                 asChild
-                                variant={isActive ? "secondary" : "ghost"}
-                                className={clsx("w-full justify-start gap-3")}
+                                variant="ghost"
+                                className={clsx(
+                                    "w-full justify-start gap-3 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                    isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
+                                )}
                             >
                                 <Link href={item.href}>
                                     <Icon className="h-4 w-4" />
@@ -69,11 +69,11 @@ export default function MobileSidebar() {
                     })}
                 </nav>
 
-                <Separator className="my-4" />
+                <Separator className="my-4 bg-sidebar-border" />
 
                 <Button
                     variant="ghost"
-                    className="w-full justify-start gap-3 text-destructive"
+                    className="w-full justify-start gap-3 text-destructive hover:bg-sidebar-accent"
                     onClick={() => signOut({ callbackUrl: "/login" })}
                 >
                     <LogOut className="h-4 w-4" />
