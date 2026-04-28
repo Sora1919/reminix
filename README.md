@@ -1,36 +1,155 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Reminix — Smart Event Reminder (Event Planner System)
 
-## Getting Started
+Reminix is a full-stack web application that helps users plan events, organize schedules, and collaborate with others using event chat and notifications.  
+Built as a final year project with a modern Next.js stack, responsive UI, and dark mode support.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Key Features
+
+### Event Management
+- Create, edit, delete events
+- Priority levels: **Low / Medium / High**
+- Optional category & location
+- Search & filters:
+    - Filter by **Category**
+    - Filter by **Priority**
+    - Search by **Title / Description**
+
+### Calendar
+- Month view (and alternative views depending on your setup)
+- Click events to view details
+- Dark mode friendly calendar styling
+
+### Collaboration & Chat
+- Event chat room (messages, emoji, reactions)
+- File upload support (uploads stored under `/uploads/...`)
+- Better chat UX:
+    - Scrollable message area
+    - “Scroll to bottom” button when you scroll up
+
+### Profile
+- Update name
+- Upload profile picture from your device (saved as `/uploads/...`)
+- Dark mode toggle
+
+### UI / UX
+- Responsive layout (desktop + mobile)
+- Sidebar + mobile sidebar
+- Clean cards, consistent spacing, dark mode friendly tokens
+
+---
+
+## Tech Stack
+- **Framework:** Next.js (App Router)
+- **Language:** TypeScript
+- **UI:** Tailwind CSS + shadcn/ui components
+- **Auth:** NextAuth (Credentials)
+- **Database:** MySQL
+- **ORM:** Prisma
+- **Calendar:** FullCalendar
+- **Toasts:** sonner
+
+---
+
+## Getting Started (Local Setup)
+### 1.Prerequisites
+- Node.js (LTS recommended)
+- MySQL running locally
+- Git (optional but recommended)
+
+### 2.Install dependencies
+```
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 3.Create .env
+```
+# Database (MySQL)
+DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/reminix"
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# NextAuth
+NEXTAUTH_URL="http://localhost:3000"
+NEXTAUTH_SECRET="YOUR_RANDOM_SECRET"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 4) Setup database (Prisma)
+```
+npx prisma generate
+npx prisma migrate dev
+```
 
-## Learn More
+### 5) Run the app
+```
+npm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Open
+```
+http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Common Troubleshooting
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### MySQL connection error
+**If you see**:
+- “Please make sure your database server is running at localhost:3306”
 
-## Deploy on Vercel
+✅ Fix:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Start MySQL server
+- Confirm DATABASE_URL is correct
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Profile save returns 405 / cannot load profile
+
+✅ Fix:
+
+- Ensure src/app/api/profile/route.ts has GET and PUT handlers.
+
+### Profile image upload says “Image must be a valid URL”
+
+✅ Fix:
+
+- Your profile API must accept /uploads/... paths (not only http/https).
+
+### Event chat shows error only on first open
+
+✅ Fix:
+
+- Messages GET should return an empty array if chat room doesn’t exist yet (instead of 404).
+
+## Project Structure (High Level)
+
+```
+src/
+  app/
+    (protected)/
+      dashboard/
+      events/
+      calendar/
+      profile/
+    api/
+      events/
+      profile/
+      upload/
+  components/
+    dashboard/
+    events/
+    calendar/
+    chat/
+    ui/
+  lib/
+  types/
+prisma/
+public/
+  uploads/
+```
+
+## Notes
+
+- Uploaded files are saved under public/uploads/
+- Image paths are stored as /uploads/... in the database
+- Dark mode uses Tailwind + shadcn tokens for consistent styling
+
+## Author
+### Kaung Set Linn
