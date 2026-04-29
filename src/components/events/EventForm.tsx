@@ -20,7 +20,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
-import { CalendarIcon, Loader2} from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -56,10 +56,11 @@ export default function EventForm({
     const [recurrenceEnabled, setRecurrenceEnabled] = useState(false);
     const [frequency, setFrequency] = useState<"DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY">("DAILY");
     const [interval, setInterval] = useState<number>(1);
+
     const [notifyBefore, setNotifyBefore] = useState<number>(30);
     const [collaboratorEmails, setCollaboratorEmails] = useState("");
 
-    // controlled inputs
+    // controlled inputs (✅ required now)
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [location, setLocation] = useState("");
@@ -104,6 +105,14 @@ export default function EventForm({
             mounted = false;
         };
     }, [categories]);
+
+    // ✅ For CREATE: auto-select first category (since category is required)
+    useEffect(() => {
+        if (mode !== "create") return;
+        if (categoryId !== null) return;
+        if (!categoryList || categoryList.length === 0) return;
+        setCategoryId(categoryList[0].id);
+    }, [mode, categoryId, categoryList]);
 
     function combineDateTime(date: Date | undefined, time: string) {
         if (!date || !time) return null;
@@ -237,8 +246,19 @@ export default function EventForm({
         e.preventDefault();
 
         const trimmedTitle = title.trim();
+        const trimmedDescription = description.trim();
+        const trimmedLocation = location.trim();
+
+        // ✅ Required fields (everything except recurrence)
         if (!trimmedTitle) return toast("Title is required");
         if (trimmedTitle.length < 3) return toast("Title must be at least 3 characters");
+
+        if (!trimmedDescription) return toast("Description is required");
+        if (trimmedDescription.length < 5) return toast("Description must be at least 5 characters");
+
+        if (!trimmedLocation) return toast("Location is required");
+
+        if (categoryId === null) return toast("Category is required");
 
         const finalStart = combineDateTime(startDate, startTime);
         const finalEnd = combineDateTime(endDate, endTime);
@@ -246,6 +266,7 @@ export default function EventForm({
         if (!finalStart || !finalEnd) return toast("Start and end date/time are required");
         if (finalStart >= finalEnd) return toast("End date/time must be after start date/time");
 
+        if (!Number.isFinite(notifyBefore)) return toast("Notify before is required");
         if (notifyBefore < 0 || notifyBefore > 10080) {
             return toast("Notify before must be between 0 and 10080 minutes (7 days)");
         }
@@ -263,8 +284,8 @@ export default function EventForm({
 
         const payload: any = {
             title: trimmedTitle,
-            description,
-            location,
+            description: trimmedDescription,
+            location: trimmedLocation,
             startDate: finalStart,
             endDate: finalEnd,
             priority,
@@ -334,8 +355,6 @@ export default function EventForm({
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Back Button */}
-
             {/* LEFT: MAIN FORM */}
             <div className="lg:col-span-8 space-y-6">
                 <Card>
@@ -347,7 +366,7 @@ export default function EventForm({
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Title */}
                             <div className="space-y-2">
-                                <Label htmlFor="title">Title</Label>
+                                <Label htmlFor="title">Title *</Label>
                                 <Input
                                     id="title"
                                     name="title"
@@ -360,10 +379,11 @@ export default function EventForm({
 
                             {/* Description */}
                             <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
+                                <Label htmlFor="description">Description *</Label>
                                 <Textarea
                                     id="description"
                                     name="description"
+                                    required
                                     placeholder="Event description..."
                                     value={description}
                                     onChange={(e) => setDescription(e.target.value)}
@@ -372,17 +392,18 @@ export default function EventForm({
 
                             {/* Location */}
                             <div className="space-y-2">
-                                <Label htmlFor="location">Location</Label>
+                                <Label htmlFor="location">Location *</Label>
                                 <Input
                                     id="location"
                                     name="location"
-                                    placeholder="Optional location..."
+                                    required
+                                    placeholder="Enter location..."
                                     value={location}
                                     onChange={(e) => setLocation(e.target.value)}
                                 />
                             </div>
 
-                            {/* Collaborators */}
+                            {/* Collaborators (still optional as labeled) */}
                             {mode === "create" && (
                                 <div className="space-y-2">
                                     <Label htmlFor="collab">Invite collaborators (optional)</Label>
@@ -401,7 +422,7 @@ export default function EventForm({
                             {/* Dates */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label>Start Date</Label>
+                                    <Label>Start Date *</Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button variant="outline" className="w-full justify-start text-left font-normal">
@@ -410,18 +431,13 @@ export default function EventForm({
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={startDate}
-                                                onSelect={setStartDate}
-                                                initialFocus
-                                            />
+                                            <Calendar mode="single" selected={startDate} onSelect={setStartDate} initialFocus />
                                         </PopoverContent>
                                     </Popover>
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label>End Date</Label>
+                                    <Label>End Date *</Label>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button variant="outline" className="w-full justify-start text-left font-normal">
@@ -430,12 +446,7 @@ export default function EventForm({
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                mode="single"
-                                                selected={endDate}
-                                                onSelect={setEndDate}
-                                                initialFocus
-                                            />
+                                            <Calendar mode="single" selected={endDate} onSelect={setEndDate} initialFocus />
                                         </PopoverContent>
                                     </Popover>
                                 </div>
@@ -444,7 +455,7 @@ export default function EventForm({
                             {/* Times */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="startTime">Start Time</Label>
+                                    <Label htmlFor="startTime">Start Time *</Label>
                                     <Input
                                         id="startTime"
                                         type="time"
@@ -455,7 +466,7 @@ export default function EventForm({
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="endTime">End Time</Label>
+                                    <Label htmlFor="endTime">End Time *</Label>
                                     <Input
                                         id="endTime"
                                         type="time"
@@ -511,6 +522,7 @@ export default function EventForm({
                         collaboratorEmails={collaboratorEmails}
                         showCollaborators={mode === "create"}
                     />
+
                     {/* Category + Priority */}
                     <Card>
                         <CardHeader>
@@ -518,16 +530,15 @@ export default function EventForm({
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Category</Label>
+                                <Label>Category *</Label>
                                 <Select
-                                    value={categoryId ? String(categoryId) : "none"}
-                                    onValueChange={(v) => setCategoryId(v === "none" ? null : Number(v))}
+                                    value={categoryId ? String(categoryId) : ""}
+                                    onValueChange={(v) => setCategoryId(Number(v))}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select category" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="none">No category</SelectItem>
                                         {categoryList.map((c) => (
                                             <SelectItem key={c.id} value={String(c.id)}>
                                                 {c.name}
@@ -535,11 +546,16 @@ export default function EventForm({
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <p className="text-xs text-muted-foreground">Category is required.</p>
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Priority</Label>
-                                <RadioGroup value={priority} onValueChange={(v) => setPriority(v as any)} className="space-y-2">
+                                <Label>Priority *</Label>
+                                <RadioGroup
+                                    value={priority}
+                                    onValueChange={(v) => setPriority(v as any)}
+                                    className="space-y-2"
+                                >
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="LOW" id="low" />
                                         <Label htmlFor="low">Low</Label>
@@ -563,10 +579,11 @@ export default function EventForm({
                             <CardTitle>Notifications</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-2">
-                            <Label htmlFor="notifyBefore">Notify Before (minutes)</Label>
+                            <Label htmlFor="notifyBefore">Notify Before (minutes) *</Label>
                             <Input
                                 id="notifyBefore"
                                 type="number"
+                                required
                                 value={notifyBefore}
                                 onChange={(e) => setNotifyBefore(Number(e.target.value))}
                                 min={0}
@@ -576,7 +593,7 @@ export default function EventForm({
                         </CardContent>
                     </Card>
 
-                    {/* Recurrence */}
+                    {/* Recurrence (optional) */}
                     <Card>
                         <CardHeader>
                             <CardTitle>Recurrence</CardTitle>
